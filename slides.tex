@@ -1,0 +1,71 @@
+\documentclass[CJK]{beamer}
+\usepackage[accumulated]{beamerseminar}
+                                % remove ``accumulated'' option
+                                % for original behaviour
+%%\usepackage{beamerthemeclassic}
+\usepackage{diagbox}
+\usepackage{xkeyval}
+\usepackage[utf8x]{inputenc}
+\usepackage{CJK}
+\usepackage{todonotes}
+\presetkeys{todonotes}{inline}{}
+
+\usetheme{boxes}
+\setbeamertemplate{frametitle}[default][center]
+
+\setbeamerfont{page number in head/foot}{size=\large}
+\setbeamertemplate{footline}[frame number]
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage[normalem]{ulem}
+\usepackage{authordate1-4}
+%\usepackage[round]{natbib}
+%\renewcommand{\cite}[1]{\citep{#1}}
+\newcommand{\newcite}[1]{\cite{#1}}
+%\newcommand{\shortcite}[1]{\citet{#1}}
+\usepackage{amsmath}
+\usepackage{centernot}
+\usepackage{xcolor}
+\definecolor{olive}{rgb}{0.3, 0.4, .1}
+\definecolor{fore}{RGB}{249,242,215}
+\definecolor{back}{RGB}{51,51,51}
+\definecolor{title}{RGB}{255,0,90}
+\definecolor{dgreen}{rgb}{0.,0.6,0.}
+\definecolor{gold}{rgb}{1.,0.84,0.}
+\definecolor{JungleGreen}{cmyk}{0.99,0,0.52,0}
+\definecolor{BlueGreen}{cmyk}{0.85,0,0.33,0}
+\definecolor{RawSienna}{cmyk}{0,0.72,1,0.45}
+\definecolor{Magenta}{cmyk}{0,1,0,0}
+
+\newcommand{\vectornorm}[1]{\left|\left|#1\right|\right|}
+
+\title{My Slides Title}
+\subtitle{Slides subtitle}
+\author[Huichao Xue]{Huichao Xue\vspace{1cm}}
+\date{}
+
+% \AtBeginSubsection[]
+% {
+%   \begin{frame}
+%     \frametitle{Table of Contents}
+%     \tableofcontents[currentsection,currentsubsection]
+%   \end{frame}
+% }
+
+\begin{document}
+\begin{CJK*}{UTF8}{gbsn}
+
+\begin{frame}
+  \maketitle
+\end{frame}
+
+\input{mindmap.tex}
+
+%\begin{frame}[allowframebreaks]{References}
+%\tiny
+%\bibliographystyle{authordate2}
+%\bibliography{bib.bib} % file name of the bibtex
+\end{frame}
+\end{CJK*}
+\end{document}

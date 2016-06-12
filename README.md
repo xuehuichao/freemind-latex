@@ -1,6 +1,28 @@
 # freemind-latex
 Convert freemind documents into latex or HTML documents.
 
+
+## How to use it?
+
+The tool runs on Mac and Linux, using Python.
+### Installation
+You'll need to first install latex, python, python-bibtexparser, python-gflags. Then
+```sh
+git clone https://github.com/xuehuichao/freemind-latex.git
+```
+
+### Usage
+```sh
+xdg-open slides.pdf
+./inotify_beamer.sh
+```
+Meanwhile, open `mindmap.mm` in freemind, and start editing it. Upon file saves, the slides will be updated.
+
+#### Generating PDF slides
+1. Create a freemind document. Place `PATH_TO_FREEMIND_LATEX/compile_beamer.sh` into the same directory.
+2. Go into the freemind document directory, and run `./compile_beamer.sh`. Then slides.tex will be the slides.
+
+
 ## Why Freemind?
 
 When writing docs/presentations, you'll often found yourself:
@@ -18,18 +40,3 @@ Freemind is better than traditional editors:
 ## What does freemind-latex do?
 
 This tool converts a freemind document into a doc (HTML or pdf), or slides (pdf). With this tool, you may focus on writing the high-level logic. We take care of formatting it into pretty latex PDFs.
-
-## How to use it?
-
-The tool runs on Mac and Linux, using Python.
-### Installation
-You'll need to first install latex, python, python-bibtexparser, python-gflags. Then
-```sh
-git clone https://github.com/xuehuichao/freemind-latex.git
-```
-
-### Usage
-
-#### Generating PDF slides
-1. Create a freemind document. Place `PATH_TO_FREEMIND_LATEX/compile_beamer.sh` into the same directory.
-2. Go into the freemind document directory, and run `./compile_beamer.sh`. Then slides.tex will be the slides.

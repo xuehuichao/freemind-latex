@@ -1,8 +1,11 @@
-import gflags, sys, logging
+import gflags
+import sys
+import logging
 from xml.dom import minidom
 import os
 from os import path
-import re, codecs
+import re
+import codecs
 
 from bibtexparser.bparser import BibTexParser
 
@@ -15,367 +18,383 @@ gflags.DEFINE_string('beamer_latex_file', None, 'the beamer latex filename')
 gflags.DEFINE_string('bib_file', '~/Dropbox/bib.bib',
                      'bib file location')
 
+
 class BibDatabase(object):
-    def __init__(self, bib_file_location = None):
-        if bib_file_location is None:
-            bib_file_location = gflags.FLAGS.bib_file
-        bib_file_location = re.sub('~', os.environ['HOME'], bib_file_location)
-        with open(bib_file_location) as bibfile:
-            content = bibfile.read()
-            bp = BibTexParser(content)
-        self.entry_map = {}
-        for ent in bp.get_entry_list():
-            self.entry_map[ent['id']] = ent
 
-    def _RetrieveEntry(self, name):
-        return self.entry_map[name]
+  def __init__(self, bib_file_location=None):
+    if bib_file_location is None:
+      bib_file_location = gflags.FLAGS.bib_file
+    bib_file_location = re.sub('~', os.environ['HOME'], bib_file_location)
+    with open(bib_file_location) as bibfile:
+      content = bibfile.read()
+      bp = BibTexParser(content)
+    self.entry_map = {}
+    for ent in bp.get_entry_list():
+      self.entry_map[ent['id']] = ent
 
-    db = None
-    @staticmethod
-    def GetTheDB():
-        if BibDatabase.db is None:
-            BibDatabase.db = BibDatabase()
-        return BibDatabase.db
+  def _RetrieveEntry(self, name):
+    return self.entry_map[name]
 
-    def GetFormattedAuthor(self, bib_authorname):
-        names = bib_authorname.split(' and ')
-        first_author_lastname = names[0].split(',')[0]
-        if len(names) == 1:
-            return first_author_lastname
-        elif len(names) >= 3:
-            return "%s et. al. " % first_author_lastname
-        else:
-            second_author_lastname = names[1].split(',')[0]
-            return "%s and %s" % (first_author_lastname,
-                                  second_author_lastname)
+  db = None
 
-    def GetOneArtCiteHTML(self, name):
-        try:
-            ent = self._RetrieveEntry(name)
-        except:
-            return "InvalidBibEntry:%s" % name
-        return "<span class=\"citation\" title=\"%s\">%s, %s</span>" % (
-            ent["title"],
-            self.GetFormattedAuthor(ent['author']),
-            ent['year'])
+  @staticmethod
+  def GetTheDB():
+    if BibDatabase.db is None:
+      BibDatabase.db = BibDatabase()
+    return BibDatabase.db
 
-    def GetOneArtNewciteHTML(self, name):
-        try:
-            ent = self._RetrieveEntry(name)
-        except:
-            return "InvalidBibEntry:%s" % name
-        return "<span class=\"citation\" title=\"%s\">%s (%s)</span>" % (
-            ent["title"],
-            self.GetFormattedAuthor(ent['author']),
-            ent['year'])
+  def GetFormattedAuthor(self, bib_authorname):
+    names = bib_authorname.split(' and ')
+    first_author_lastname = names[0].split(',')[0]
+    if len(names) == 1:
+      return first_author_lastname
+    elif len(names) >= 3:
+      return "%s et. al. " % first_author_lastname
+    else:
+      second_author_lastname = names[1].split(',')[0]
+      return "%s and %s" % (first_author_lastname,
+                            second_author_lastname)
 
+  def GetOneArtCiteHTML(self, name):
+    try:
+      ent = self._RetrieveEntry(name)
+    except:
+      return "InvalidBibEntry:%s" % name
+    return "<span class=\"citation\" title=\"%s\">%s, %s</span>" % (
+      ent["title"],
+      self.GetFormattedAuthor(ent['author']),
+      ent['year'])
 
-    def GetCiteHTML(self, name):
-        return '(%s)' % (
-            "; ".join(self.GetOneArtCiteHTML(x) for x in name.split(',')))
+  def GetOneArtNewciteHTML(self, name):
+    try:
+      ent = self._RetrieveEntry(name)
+    except:
+      return "InvalidBibEntry:%s" % name
+    return "<span class=\"citation\" title=\"%s\">%s (%s)</span>" % (
+      ent["title"],
+      self.GetFormattedAuthor(ent['author']),
+      ent['year'])
 
-    def GetNewciteHTML(self, name):
-        return ", ".join(self.GetOneArtNewciteHTML(x) for x in name.split(','))
+  def GetCiteHTML(self, name):
+    return '(%s)' % (
+      "; ".join(self.GetOneArtCiteHTML(x) for x in name.split(',')))
+
+  def GetNewciteHTML(self, name):
+    return ", ".join(self.GetOneArtNewciteHTML(x) for x in name.split(','))
+
 
 class Node(object):
-    accepted_nodes = ['node', 'richcontent']
+  accepted_nodes = ['node', 'richcontent']
 
-    def __init__(self, dom_node, level = 0):
-        self.type = dom_node.nodeName
-        self.level = level
-        try:
-            self.text = dom_node.attributes['TEXT'].value
-        except:
-            self.text = "NONE"
+  def __init__(self, dom_node, level=0):
+    self.type = dom_node.nodeName
+    self.level = level
+    try:
+      self.text = dom_node.attributes['TEXT'].value
+    except:
+      self.text = "NONE"
 
-        self.printing_func = None
+    self.printing_func = None
 
-        self.children = []
-        for child in dom_node.childNodes:
-            self.AddInfoForChild(child)
+    self.children = []
+    for child in dom_node.childNodes:
+      self.AddInfoForChild(child)
 
+  def AddInfoForChild(self, child):
+    if child.nodeType == child.TEXT_NODE:
+      return
+    if child.nodeName not in Node.accepted_nodes:
+      return
 
-    def AddInfoForChild(self, child):
-        if child.nodeType == child.TEXT_NODE:
-            return
-        if child.nodeName not in Node.accepted_nodes:
-            return
+    if child.nodeName == 'richcontent':
+      self.children.append(ImageNode(child, self.level + 1))
+      return
 
-        if child.nodeName == 'richcontent':
-            self.children.append(ImageNode(child, self.level + 1))
-            return
+    if 'TEXT' not in child.attributes.keys():
+      for g in child.childNodes:
+        self.AddInfoForChild(g)
+      return
 
-        if 'TEXT' not in child.attributes.keys():
-            for g in child.childNodes:
-                self.AddInfoForChild(g)
-            return
+    if child.attributes['TEXT'].value.startswith('#'):
+      return
 
-        if child.attributes['TEXT'].value.startswith('#'):
-            return
+    self.children.append(Node(child, self.level + 1))
 
-        self.children.append(Node(child, self.level + 1))
+  def __str__(self):
+    pass
 
-    def __str__(self):
-        pass
+  def GetText(self, format='html'):
+    def ReplaceCitations(s):
+      def get_cite_html(mo):
+        citation = BibDatabase.GetTheDB().GetCiteHTML(mo.group(1))
+        return citation
 
-    def GetText(self, format = 'html'):
-        def ReplaceCitations(s):
-            def get_cite_html(mo):
-                citation = BibDatabase.GetTheDB().GetCiteHTML(mo.group(1))
-                return citation
-            def get_newcite_html(mo):
-                citation = BibDatabase.GetTheDB().GetNewciteHTML(mo.group(1))
-                return citation
+      def get_newcite_html(mo):
+        citation = BibDatabase.GetTheDB().GetNewciteHTML(mo.group(1))
+        return citation
 
-            s = re.sub(
-                r'\\cite{(.*?)}',
-                get_cite_html,
-                s)
-            s = re.sub(
-                r'\\newcite{(.*?)}',
-                get_newcite_html,
-                s)
-            return s
+      s = re.sub(
+        r'\\cite{(.*?)}',
+        get_cite_html,
+        s)
+      s = re.sub(
+        r'\\newcite{(.*?)}',
+        get_newcite_html,
+        s)
+      return s
 
-        def ReplaceEmphMarkups(s):
-            return re.sub(
-                r'\\emph{(.*?)}',
-                lambda x : '<i>%s</i>' % x.group(1),
-                s)
+    def ReplaceEmphMarkups(s):
+      return re.sub(
+        r'\\emph{(.*?)}',
+        lambda x: '<i>%s</i>' % x.group(1),
+        s)
 
-        def ReplaceSubScores(s):
-            return re.sub(
-                r'\_',
-                '_',
-                s)
+    def ReplaceSubScores(s):
+      return re.sub(
+        r'\_',
+        '_',
+        s)
 
-        def ReplacePercScores(s):
-            return re.sub(
-                r'\%',
-                '%',
-                s)
+    def ReplacePercScores(s):
+      return re.sub(
+        r'\%',
+        '%',
+        s)
 
-        def ReplaceTextBFMarkups(s):
-            return re.sub(
-                r'\\textbf{(.*?)}',
-                lambda x : '<b>%s</b>' % x.group(1),
-                s)
+    def ReplaceTextBFMarkups(s):
+      return re.sub(
+        r'\\textbf{(.*?)}',
+        lambda x: '<b>%s</b>' % x.group(1),
+        s)
 
-        def ReplaceFootnoteMarkups(s):
-            return re.sub(
-                r'\\footnote{(.*)}',
-                lambda x : '<span title="%s" class="footnote">FOOTNOTE</span>' % x.group(1),
-                s)
+    def ReplaceFootnoteMarkups(s):
+      return re.sub(
+        r'\\footnote{(.*)}',
+        lambda x: '<span title="%s" class="footnote">FOOTNOTE</span>' % x.group(
+          1),
+        s)
 
-        def ReplaceUnderlineMarkups(s):
-            return re.sub(
-                r'\\underline{(.*?)}',
-                lambda x : '<u>%s</u>' % x.group(1),
-                s)
-        def ReplaceTextSFMarkups(s):
-            return re.sub(
-                r'\\textsf{(.*?)}',
-                lambda x : '<span class="sf">%s</span>' % x.group(1),
-                s)
-        def ReplaceSoutMarkups(s):
-            return re.sub(
-                r'\\sout{(.*?)}',
-                lambda x : '<strike>%s</strike>' % x.group(1),
-                s)
-        def ReplaceTildas(s):
-            return s.replace('~', ' ')
-        def ReplaceLdots(s):
-            return s.replace('\\ldots', '...')
+    def ReplaceUnderlineMarkups(s):
+      return re.sub(
+        r'\\underline{(.*?)}',
+        lambda x: '<u>%s</u>' % x.group(1),
+        s)
 
-        def ReplaceDollarSigns(s):
-            s1 = re.sub(r'\$\$(.*?)\$\$', lambda mo: r"\[%s\]" % mo.group(1), s)
-            s2 = re.sub(r'\$(.*?)\$', lambda mo: r"\(%s\)" % mo.group(1), s1)
-            return s2
+    def ReplaceTextSFMarkups(s):
+      return re.sub(
+        r'\\textsf{(.*?)}',
+        lambda x: '<span class="sf">%s</span>' % x.group(1),
+        s)
 
-        filters = [ReplaceTildas,
-                   ReplacePercScores,
-                   ReplaceTextBFMarkups,
-                   ReplaceEmphMarkups,
-                   ReplaceTextSFMarkups,
-                   ReplaceSoutMarkups,
-                   ReplaceUnderlineMarkups,
-                   ReplaceCitations,
-                   ReplaceLdots,
-                   ReplaceDollarSigns,
-                   ReplaceSubScores,
-                   ReplaceFootnoteMarkups,
-        ]
+    def ReplaceSoutMarkups(s):
+      return re.sub(
+        r'\\sout{(.*?)}',
+        lambda x: '<strike>%s</strike>' % x.group(1),
+        s)
 
-        txt = self.text
-        if format == 'beamer_latex':
-            format = 'latex'
-        if format == 'latex':
-            if '<TABLE' in txt or '<table' in txt:
-                return "TABLE"
-            return txt
-        for f in reversed(filters):
-            txt = f(txt)
-        return txt
+    def ReplaceTildas(s):
+      return s.replace('~', ' ')
 
-    def PrintSelfToWriter(self, writer, format = 'html'):
-        if self.level == 0:
-            return
+    def ReplaceLdots(s):
+      return s.replace('\\ldots', '...')
 
-        writer.write(self.GetText(format))
+    def ReplaceDollarSigns(s):
+      s1 = re.sub(r'\$\$(.*?)\$\$', lambda mo: r"\[%s\]" % mo.group(1), s)
+      s2 = re.sub(r'\$(.*?)\$', lambda mo: r"\(%s\)" % mo.group(1), s1)
+      return s2
 
-    def SetPrintingFunc(self, func):
-        self.printing_func = func
+    filters = [ReplaceTildas,
+               ReplacePercScores,
+               ReplaceTextBFMarkups,
+               ReplaceEmphMarkups,
+               ReplaceTextSFMarkups,
+               ReplaceSoutMarkups,
+               ReplaceUnderlineMarkups,
+               ReplaceCitations,
+               ReplaceLdots,
+               ReplaceDollarSigns,
+               ReplaceSubScores,
+               ReplaceFootnoteMarkups,
+               ]
 
-    def GetChildren(self):
-        return self.children
+    txt = self.text
+    if format == 'beamer_latex':
+      format = 'latex'
+    if format == 'latex':
+      if '<TABLE' in txt or '<table' in txt:
+        return "TABLE"
+      return txt
+    for f in reversed(filters):
+      txt = f(txt)
+    return txt
 
-    def GetPrintableChildren(self):
-        return [child for child in self.GetChildren() if child.IsPrintable()]
+  def PrintSelfToWriter(self, writer, format='html'):
+    if self.level == 0:
+      return
 
-    def HasPrinter(self):
-        return (self.printing_func is not None)
+    writer.write(self.GetText(format))
 
-    def GetPrinter(self):
-        assert self.printing_func is not None
-        return self.printing_func
+  def SetPrintingFunc(self, func):
+    self.printing_func = func
 
-    def GetLevel(self):
-        return self.level
+  def GetChildren(self):
+    return self.children
 
-    def IsFormattingNode(self):
-        return (self.GetText() in ['SECTIONS', 'SUBSECTIONS', 'SUBSUBSECTIONS', 'LIST', 'ULIST', 'HLIST']) or self.GetText().startswith('WIDTH=')
+  def GetPrintableChildren(self):
+    return [child for child in self.GetChildren() if child.IsPrintable()]
 
-    def GetTheFormattingChildNode(self):
-        for child in self.GetChildren():
-            if child.IsFormattingNode():
-                return child
-        return None
+  def HasPrinter(self):
+    return (self.printing_func is not None)
 
-    def IsImageNode(self):
-        return False
+  def GetPrinter(self):
+    assert self.printing_func is not None
+    return self.printing_func
 
-    def IsCommentNode(self):
-        return self.GetText().startswith('Comment:')
+  def GetLevel(self):
+    return self.level
 
-    def IsStoryNode(self):
-        return self.GetText().startswith('Story:')
+  def IsFormattingNode(self):
+    return (self.GetText() in ['SECTIONS', 'SUBSECTIONS', 'SUBSUBSECTIONS',
+                               'LIST', 'ULIST', 'HLIST']) or self.GetText().startswith('WIDTH=')
 
-    def IsPrintable(self):
-        return (not self.IsFormattingNode())
+  def GetTheFormattingChildNode(self):
+    for child in self.GetChildren():
+      if child.IsFormattingNode():
+        return child
+    return None
 
-    def IsGraphNodeDescription(self):
-        cld = self.GetPrintableChildren()
-        return ((len(cld) == 1) and (cld[0].IsImageNode()))
+  def IsImageNode(self):
+    return False
 
-    def IsHelperNode(self):
-        return self.IsStoryNode() or self.IsCommentNode()
+  def IsCommentNode(self):
+    return self.GetText().startswith('Comment:')
 
-    def IsLeafNode(self):
-        formatting_node = self.GetTheFormattingChildNode()
-        if formatting_node is not None and (
-            formatting_node.GetText() == 'LIST'
-            or formatting_node.GetText() == 'ULIST'
-            or formatting_node.GetText() == 'HLIST'
-            ):
-            return True
-        return len(self.GetPrintableChildren()) == 0 or self.IsGraphNodeDescription() or all(child.IsHelperNode() for child in self.GetPrintableChildren())
+  def IsStoryNode(self):
+    return self.GetText().startswith('Story:')
 
-    def QualifyAsParagraph(self):
-        cld = self.GetPrintableChildren()
-        return not self.IsLeafNode() and all(child.IsLeafNode() for child in cld) and not self.IsGraphNodeDescription()
+  def IsPrintable(self):
+    return (not self.IsFormattingNode())
+
+  def IsGraphNodeDescription(self):
+    cld = self.GetPrintableChildren()
+    return ((len(cld) == 1) and (cld[0].IsImageNode()))
+
+  def IsHelperNode(self):
+    return self.IsStoryNode() or self.IsCommentNode()
+
+  def IsLeafNode(self):
+    formatting_node = self.GetTheFormattingChildNode()
+    if formatting_node is not None and (
+        formatting_node.GetText() == 'LIST'
+        or formatting_node.GetText() == 'ULIST'
+        or formatting_node.GetText() == 'HLIST'
+    ):
+      return True
+    return len(self.GetPrintableChildren()) == 0 or self.IsGraphNodeDescription(
+    ) or all(child.IsHelperNode() for child in self.GetPrintableChildren())
+
+  def QualifyAsParagraph(self):
+    cld = self.GetPrintableChildren()
+    return not self.IsLeafNode() and all(child.IsLeafNode()
+                                         for child in cld) and not self.IsGraphNodeDescription()
+
 
 class ImageNode(Node):
-    def __init__(self, dom_node, level):
-        Node.__init__(self, dom_node, level)
-        rel_loc = dom_node.getElementsByTagName("img")[0].attributes['src'].value
-        loc = rel_loc
-        if gflags.FLAGS.use_absolute_paths_for_images:
-            loc = path.abspath(path.join(
-                path.dirname(gflags.FLAGS.mindmap_file), rel_loc))
-        self.img = loc
 
-    def IsImageNode(self):
-        return True
+  def __init__(self, dom_node, level):
+    Node.__init__(self, dom_node, level)
+    rel_loc = dom_node.getElementsByTagName("img")[0].attributes['src'].value
+    loc = rel_loc
+    if gflags.FLAGS.use_absolute_paths_for_images:
+      loc = path.abspath(path.join(
+        path.dirname(gflags.FLAGS.mindmap_file), rel_loc))
+    self.img = loc
 
-    def GetImageLoc(self):
-        return self.img
+  def IsImageNode(self):
+    return True
 
-    def IsLeafNode(self):
-        return True
+  def GetImageLoc(self):
+    return self.img
+
+  def IsLeafNode(self):
+    return True
+
 
 def GetPrinterFromFormattingNode(formatting_node, node):
-    fn_text = formatting_node.GetText()
-    mo = re.match(r'WIDTH=(\d+(\.\d+))', fn_text)
-    if mo is not None:
-        return OutputImage(node, width = float(mo.group(1)))
+  fn_text = formatting_node.GetText()
+  mo = re.match(r'WIDTH=(\d+(\.\d+))', fn_text)
+  if mo is not None:
+    return OutputImage(node, width=float(mo.group(1)))
 
-    tags_map = {'SECTIONS': PrintCurrentAsSection(node, 'h2'),
-                'SUBSECTIONS' : PrintCurrentAsSection(node, 'h3'),
-                'SUBSUBSECTIONS' : PrintCurrentAsSection(node, 'h4'),
-                }
-    return tags_map[fn_text]
+  tags_map = {'SECTIONS': PrintCurrentAsSection(node, 'h2'),
+              'SUBSECTIONS': PrintCurrentAsSection(node, 'h3'),
+              'SUBSUBSECTIONS': PrintCurrentAsSection(node, 'h4'),
+              }
+  return tags_map[fn_text]
+
 
 class Organization(object):
-    def __init__(self, mm_file_content):
-        dom = minidom.parseString(mm_file_content)
-        self.doc = self.SaveFromDom(dom)
-        self.LabelTree(self.doc)
 
-    def SaveFromDom(self, dom):
-        return Node(dom.childNodes[0])
+  def __init__(self, mm_file_content):
+    dom = minidom.parseString(mm_file_content)
+    self.doc = self.SaveFromDom(dom)
+    self.LabelTree(self.doc)
 
-    def LabelAllIntoLayers(self, node):
-        formatting_node = node.GetTheFormattingChildNode()
-        if formatting_node is not None:
-            if formatting_node.GetText() == 'LIST':
-                node.SetPrintingFunc(OutputOrderedList(node))
-                for child in node.GetChildren():
-                    self.LabelAllIntoLayers(child)
-                return
-            if formatting_node.GetText() == 'ULIST':
-                node.SetPrintingFunc(OutputUnorderedList(node))
-                for child in node.GetChildren():
-                    self.LabelAllIntoLayers(child)
-                return
-            if formatting_node.GetText() == 'HLIST':
-                node.SetPrintingFunc(OutputHAlignedList(node))
-                for child in node.GetChildren():
-                    self.LabelAllIntoLayers(child)
-                return
-            if not node.HasPrinter():
-                node.SetPrintingFunc(DirectlyPrintThisAndSub(node))
-            for child in node.GetPrintableChildren():
-                child.SetPrintingFunc(
-                    GetPrinterFromFormattingNode(formatting_node, child))
+  def SaveFromDom(self, dom):
+    return Node(dom.childNodes[0])
 
-        if node.GetLevel() == 1:
-            node.SetPrintingFunc(PrintTopLevel(node))
-
-        if node.IsCommentNode():
-            node.SetPrintingFunc(OutputComment(node))
-        elif node.IsStoryNode():
-            node.SetPrintingFunc(OutputStory(node))
-        elif node.IsGraphNodeDescription():
-            node.SetPrintingFunc(DirectlyPrintThisAndSub(node))
-
-        if not node.HasPrinter():
-            if node.IsImageNode():
-                node.SetPrintingFunc(OutputImage(node))
-            elif node.QualifyAsParagraph():
-                node.SetPrintingFunc(OutputParagraph(node))
-            else:
-                node.SetPrintingFunc(OutputOrderedList(node))
-
+  def LabelAllIntoLayers(self, node):
+    formatting_node = node.GetTheFormattingChildNode()
+    if formatting_node is not None:
+      if formatting_node.GetText() == 'LIST':
+        node.SetPrintingFunc(OutputOrderedList(node))
         for child in node.GetChildren():
-            self.LabelAllIntoLayers(child)
+          self.LabelAllIntoLayers(child)
+        return
+      if formatting_node.GetText() == 'ULIST':
+        node.SetPrintingFunc(OutputUnorderedList(node))
+        for child in node.GetChildren():
+          self.LabelAllIntoLayers(child)
+        return
+      if formatting_node.GetText() == 'HLIST':
+        node.SetPrintingFunc(OutputHAlignedList(node))
+        for child in node.GetChildren():
+          self.LabelAllIntoLayers(child)
+        return
+      if not node.HasPrinter():
+        node.SetPrintingFunc(DirectlyPrintThisAndSub(node))
+      for child in node.GetPrintableChildren():
+        child.SetPrintingFunc(
+          GetPrinterFromFormattingNode(formatting_node, child))
 
-    def LabelTree(self, node):
-        self.LabelAllIntoLayers(node)
-        node.SetPrintingFunc(DirectlyPrintSub(node))
+    if node.GetLevel() == 1:
+      node.SetPrintingFunc(PrintTopLevel(node))
 
-    def OutputToHTML(self, filename):
-        with codecs.open(filename, 'w', 'utf8') as outputfile:
-            print >> outputfile, """
+    if node.IsCommentNode():
+      node.SetPrintingFunc(OutputComment(node))
+    elif node.IsStoryNode():
+      node.SetPrintingFunc(OutputStory(node))
+    elif node.IsGraphNodeDescription():
+      node.SetPrintingFunc(DirectlyPrintThisAndSub(node))
+
+    if not node.HasPrinter():
+      if node.IsImageNode():
+        node.SetPrintingFunc(OutputImage(node))
+      elif node.QualifyAsParagraph():
+        node.SetPrintingFunc(OutputParagraph(node))
+      else:
+        node.SetPrintingFunc(OutputOrderedList(node))
+
+    for child in node.GetChildren():
+      self.LabelAllIntoLayers(child)
+
+  def LabelTree(self, node):
+    self.LabelAllIntoLayers(node)
+    node.SetPrintingFunc(DirectlyPrintSub(node))
+
+  def OutputToHTML(self, filename):
+    with codecs.open(filename, 'w', 'utf8') as outputfile:
+      print >> outputfile, """
 <meta charset="UTF-8">
 <style>
 span.citation {
@@ -414,440 +433,450 @@ function ToggleComments() {
 <button onclick="ToggleComments()">show/hide comments</button>
             """
 
-            self.doc.GetPrinter()(outputfile)
+      self.doc.GetPrinter()(outputfile)
 
-    def OutputToLatex(self, filename):
-        with codecs.open(filename, 'w', 'utf8') as outputfile:
-            self.doc.GetPrinter()(outputfile, 'latex')
+  def OutputToLatex(self, filename):
+    with codecs.open(filename, 'w', 'utf8') as outputfile:
+      self.doc.GetPrinter()(outputfile, 'latex')
 
-    def OutputToBeamerLatex(self, filename):
-        with codecs.open(filename, 'w', 'utf8') as outputfile:
-            self.doc.GetPrinter()(outputfile, 'beamer_latex')
+  def OutputToBeamerLatex(self, filename):
+    with codecs.open(filename, 'w', 'utf8') as outputfile:
+      self.doc.GetPrinter()(outputfile, 'beamer_latex')
 
 
 def OutputOrderedList(current_node):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        PrintInLatexFormatWithTag(writer, 'beamer_latex')
+  def PrintInBeamerLatexFormat(writer):
+    PrintInLatexFormatWithTag(writer, 'beamer_latex')
 
-    def PrintInHTMLFormat(writer):
-        current_node.PrintSelfToWriter(writer)
-        if len(current_node.GetPrintableChildren()) > 0:
-            writer.write('<ol>')
-            for t in current_node.GetPrintableChildren():
-                if t.IsStoryNode() or t.IsCommentNode():
-                    t.GetPrinter()(writer)
-                    writer.write('<br>')
-                else:
-                    writer.write('<li>')
-                    t.GetPrinter()(writer)
-                    writer.write('</li>')
-            writer.write('</ol>')
+  def PrintInHTMLFormat(writer):
+    current_node.PrintSelfToWriter(writer)
+    if len(current_node.GetPrintableChildren()) > 0:
+      writer.write('<ol>')
+      for t in current_node.GetPrintableChildren():
+        if t.IsStoryNode() or t.IsCommentNode():
+          t.GetPrinter()(writer)
+          writer.write('<br>')
+        else:
+          writer.write('<li>')
+          t.GetPrinter()(writer)
+          writer.write('</li>')
+      writer.write('</ol>')
 
-    def PrintInLatexFormat(writer):
-        PrintInLatexFormatWithTag(writer, 'latex')
+  def PrintInLatexFormat(writer):
+    PrintInLatexFormatWithTag(writer, 'latex')
 
-    def PrintInLatexFormatWithTag(writer, tag = 'latex'):
-        current_node.PrintSelfToWriter(writer, tag)
-        if len(current_node.GetPrintableChildren()) > 0:
-            writer.write(r'\begin{enumerate}')
-            for t in current_node.GetPrintableChildren():
-                if t.IsStoryNode() or t.IsCommentNode():
-                    t.GetPrinter()(writer, tag)
-                    writer.write('\n')
-                else:
-                    writer.write(r'\item ')
-                    t.GetPrinter()(writer, tag)
-                    writer.write('\n')
-            writer.write(r'\end{enumerate}')
+  def PrintInLatexFormatWithTag(writer, tag='latex'):
+    current_node.PrintSelfToWriter(writer, tag)
+    if len(current_node.GetPrintableChildren()) > 0:
+      writer.write(r'\begin{enumerate}')
+      for t in current_node.GetPrintableChildren():
+        if t.IsStoryNode() or t.IsCommentNode():
+          t.GetPrinter()(writer, tag)
+          writer.write('\n')
+        else:
+          writer.write(r'\item ')
+          t.GetPrinter()(writer, tag)
+          writer.write('\n')
+      writer.write(r'\end{enumerate}')
 
-    return PrintTo
+  return PrintTo
 
 
 def OutputUnorderedList(current_node):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        PrintInLatexFormatWithFormatTag(writer, 'beamer_latex')
+  def PrintInBeamerLatexFormat(writer):
+    PrintInLatexFormatWithFormatTag(writer, 'beamer_latex')
 
-    def PrintInHTMLFormat(writer):
-        current_node.PrintSelfToWriter(writer)
-        if len(current_node.GetPrintableChildren()) > 0:
-            writer.write('<ul>')
-            for t in current_node.GetPrintableChildren():
-                if t.IsStoryNode() or t.IsCommentNode():
-                    t.GetPrinter()(writer)
-                    writer.write('<br>')
-                else:
-                    writer.write('<li>')
-                    t.GetPrinter()(writer)
-                    writer.write('</li>')
-            writer.write('</ul>')
+  def PrintInHTMLFormat(writer):
+    current_node.PrintSelfToWriter(writer)
+    if len(current_node.GetPrintableChildren()) > 0:
+      writer.write('<ul>')
+      for t in current_node.GetPrintableChildren():
+        if t.IsStoryNode() or t.IsCommentNode():
+          t.GetPrinter()(writer)
+          writer.write('<br>')
+        else:
+          writer.write('<li>')
+          t.GetPrinter()(writer)
+          writer.write('</li>')
+      writer.write('</ul>')
 
-    def PrintInLatexFormat(writer):
-        PrintInLatexFormatWithFormatTag(writer, 'latex')
+  def PrintInLatexFormat(writer):
+    PrintInLatexFormatWithFormatTag(writer, 'latex')
 
-    def PrintInLatexFormatWithFormatTag(writer, tag = 'latex'):
-        current_node.PrintSelfToWriter(writer, tag)
-        if len(current_node.GetPrintableChildren()) > 0:
-            writer.write(r'\begin{itemize}')
-            for t in current_node.GetPrintableChildren():
-                if t.IsStoryNode() or t.IsCommentNode():
-                    t.GetPrinter()(writer, tag)
-                    writer.write('\n')
-                else:
-                    writer.write(r'\item ')
-                    t.GetPrinter()(writer, tag)
-                    writer.write('\n')
-            writer.write(r'\end{itemize}')
+  def PrintInLatexFormatWithFormatTag(writer, tag='latex'):
+    current_node.PrintSelfToWriter(writer, tag)
+    if len(current_node.GetPrintableChildren()) > 0:
+      writer.write(r'\begin{itemize}')
+      for t in current_node.GetPrintableChildren():
+        if t.IsStoryNode() or t.IsCommentNode():
+          t.GetPrinter()(writer, tag)
+          writer.write('\n')
+        else:
+          writer.write(r'\item ')
+          t.GetPrinter()(writer, tag)
+          writer.write('\n')
+      writer.write(r'\end{itemize}')
 
+  return PrintTo
 
-    return PrintTo
 
 def OutputHAlignedList(current_node):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        PrintInLatexFormatWithFormatTag(writer, 'beamer_latex')
+  def PrintInBeamerLatexFormat(writer):
+    PrintInLatexFormatWithFormatTag(writer, 'beamer_latex')
 
-    def PrintInHTMLFormat(writer):
-        current_node.PrintSelfToWriter(writer)
-        if len(current_node.GetPrintableChildren()) > 0:
-            writer.write('<ul>')
-            for t in current_node.GetPrintableChildren():
-                if t.IsStoryNode() or t.IsCommentNode():
-                    t.GetPrinter()(writer)
-                    writer.write('<br>')
-                else:
-                    writer.write('<li>')
-                    t.GetPrinter()(writer)
-                    writer.write('</li>')
-            writer.write('</ul>')
+  def PrintInHTMLFormat(writer):
+    current_node.PrintSelfToWriter(writer)
+    if len(current_node.GetPrintableChildren()) > 0:
+      writer.write('<ul>')
+      for t in current_node.GetPrintableChildren():
+        if t.IsStoryNode() or t.IsCommentNode():
+          t.GetPrinter()(writer)
+          writer.write('<br>')
+        else:
+          writer.write('<li>')
+          t.GetPrinter()(writer)
+          writer.write('</li>')
+      writer.write('</ul>')
 
-    def PrintInLatexFormat(writer):
-        PrintInLatexFormatWithFormatTag(writer, 'latex')
+  def PrintInLatexFormat(writer):
+    PrintInLatexFormatWithFormatTag(writer, 'latex')
 
-    def PrintInLatexFormatWithFormatTag(writer, tag = 'latex'):
-        current_node.PrintSelfToWriter(writer, tag)
-        if len(current_node.GetPrintableChildren()) > 0:
-            all_children = current_node.GetPrintableChildren()
-            algned_children = [t for t in all_children if not (
-                t.IsStoryNode() or t.IsCommentNode())]
-            n = len(algned_children)
-            writer.write(r'\vspace{0.2cm}\begin{columns}[onlytextwidth]')
-            col_width = 0.9 / n
-            for t in all_children:
-                if t.IsStoryNode() or t.IsCommentNode():
-                    t.GetPrinter()(writer, tag)
-                    writer.write('\n')
-                else:
-                    writer.write(r'\begin{column}{%.2f\textwidth} \centering ' % col_width)
-                    t.GetPrinter()(writer, tag)
-                    writer.write(r'\end{column}')
-            writer.write(r'\end{columns}')
+  def PrintInLatexFormatWithFormatTag(writer, tag='latex'):
+    current_node.PrintSelfToWriter(writer, tag)
+    if len(current_node.GetPrintableChildren()) > 0:
+      all_children = current_node.GetPrintableChildren()
+      algned_children = [t for t in all_children if not (
+        t.IsStoryNode() or t.IsCommentNode())]
+      n = len(algned_children)
+      writer.write(r'\vspace{0.2cm}\begin{columns}[onlytextwidth]')
+      col_width = 0.9 / n
+      for t in all_children:
+        if t.IsStoryNode() or t.IsCommentNode():
+          t.GetPrinter()(writer, tag)
+          writer.write('\n')
+        else:
+          writer.write(
+            r'\begin{column}{%.2f\textwidth} \centering ' %
+            col_width)
+          t.GetPrinter()(writer, tag)
+          writer.write(r'\end{column}')
+      writer.write(r'\end{columns}')
 
-
-    return PrintTo
+  return PrintTo
 
 
 def OutputStory(current_node):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        pass
+  def PrintInBeamerLatexFormat(writer):
+    pass
 
-    def PrintInHTMLFormat(writer):
-        writer.write('<i><span class="help">')
-        current_node.PrintSelfToWriter(writer)
-        writer.write('</span></i>')
+  def PrintInHTMLFormat(writer):
+    writer.write('<i><span class="help">')
+    current_node.PrintSelfToWriter(writer)
+    writer.write('</span></i>')
 
-    def PrintInLatexFormat(writer):
-        writer.write('%%')
-        current_node.PrintSelfToWriter(writer, 'latex')
+  def PrintInLatexFormat(writer):
+    writer.write('%%')
+    current_node.PrintSelfToWriter(writer, 'latex')
 
-    return PrintTo
+  return PrintTo
 
-def OutputImage(current_node, width = None):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer, current_node, width)
-        elif format == 'latex':
-            PrintInLatexFormat(writer, current_node, width)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer, current_node, width)
 
-    def PrintInBeamerLatexFormat(writer, current_node, width):
-        if width is None:
-            width = r'.7\textwidth'
-        elif width <= 1:
-            width = r'%.2f\textwidth'% width
-        else:
-            width = r'%.2fpx'% width
+def OutputImage(current_node, width=None):
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer, current_node, width)
+    elif format == 'latex':
+      PrintInLatexFormat(writer, current_node, width)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer, current_node, width)
 
-        writer.write(r'\begin{centering}\includegraphics[width=%s]{%s}' % (
-            width, current_node.GetImageLoc()))
-        writer.write(r'\end{centering}')
+  def PrintInBeamerLatexFormat(writer, current_node, width):
+    if width is None:
+      width = r'.7\textwidth'
+    elif width <= 1:
+      width = r'%.2f\textwidth' % width
+    else:
+      width = r'%.2fpx' % width
 
-    def PrintInHTMLFormat(writer, current_node, width):
-        if width is None:
-            width = 500
-        writer.write('<center><img src="%s" width="%.2fpx">' % (current_node.GetImageLoc(), width))
-        writer.write('</img></center>')
+    writer.write(r'\begin{centering}\includegraphics[width=%s]{%s}' % (
+      width, current_node.GetImageLoc()))
+    writer.write(r'\end{centering}')
 
-    def PrintInLatexFormat(writer, current_node, width):
-        if width is None:
-            width = r'.7\textwidth'
-        else:
-            width = r'%.2f\textwidth'% width
+  def PrintInHTMLFormat(writer, current_node, width):
+    if width is None:
+      width = 500
+    writer.write(
+      '<center><img src="%s" width="%.2fpx">' %
+      (current_node.GetImageLoc(), width))
+    writer.write('</img></center>')
 
-        writer.write(r'\begin{figure}\includegraphics[width=%s]{%s}' % (
-            width, current_node.GetImageLoc()))
-        writer.write(r'\end{figure}')
+  def PrintInLatexFormat(writer, current_node, width):
+    if width is None:
+      width = r'.7\textwidth'
+    else:
+      width = r'%.2f\textwidth' % width
 
-    return PrintTo
+    writer.write(r'\begin{figure}\includegraphics[width=%s]{%s}' % (
+      width, current_node.GetImageLoc()))
+    writer.write(r'\end{figure}')
+
+  return PrintTo
 
 
 def OutputComment(current_node):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        PrintInLatexFormat(writer)
+  def PrintInBeamerLatexFormat(writer):
+    PrintInLatexFormat(writer)
 
-    def PrintInHTMLFormat(writer):
-        writer.write('<span class="help" style="color:red">')
-        current_node.PrintSelfToWriter(writer)
-        writer.write('</span>')
+  def PrintInHTMLFormat(writer):
+    writer.write('<span class="help" style="color:red">')
+    current_node.PrintSelfToWriter(writer)
+    writer.write('</span>')
 
-    def PrintInLatexFormat(writer):
-        writer.write(r'\todo[size=\tiny]{')
-        current_node.PrintSelfToWriter(writer, 'latex')
-        writer.write(r'}')
+  def PrintInLatexFormat(writer):
+    writer.write(r'\todo[size=\tiny]{')
+    current_node.PrintSelfToWriter(writer, 'latex')
+    writer.write(r'}')
 
-    return PrintTo
+  return PrintTo
+
 
 def OutputParagraph(current_node):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        writer.write(r'\begin{frame}{')
-        current_node.PrintSelfToWriter(writer, 'beamer_latex')
-        writer.write(r'}')
-        for i in current_node.GetPrintableChildren():
-            i.GetPrinter()(writer, 'beamer_latex')
-            writer.write('\n')
-        writer.write(r'\end{frame}')
+  def PrintInBeamerLatexFormat(writer):
+    writer.write(r'\begin{frame}{')
+    current_node.PrintSelfToWriter(writer, 'beamer_latex')
+    writer.write(r'}')
+    for i in current_node.GetPrintableChildren():
+      i.GetPrinter()(writer, 'beamer_latex')
+      writer.write('\n')
+    writer.write(r'\end{frame}')
 
-    def PrintInHTMLFormat(writer):
-        writer.write('<p><span class="help" style="font-size:120%; font-style:italic">')
-        current_node.PrintSelfToWriter(writer)
-        writer.write('</span>')
-        for i in current_node.GetPrintableChildren():
-            writer.write('<br class="help"> ')
-            i.GetPrinter()(writer)
-        writer.write('</span></p>')
+  def PrintInHTMLFormat(writer):
+    writer.write(
+      '<p><span class="help" style="font-size:120%; font-style:italic">')
+    current_node.PrintSelfToWriter(writer)
+    writer.write('</span>')
+    for i in current_node.GetPrintableChildren():
+      writer.write('<br class="help"> ')
+      i.GetPrinter()(writer)
+    writer.write('</span></p>')
 
-    def PrintInLatexFormat(writer):
-        writer.write('\n%%')
-        current_node.PrintSelfToWriter(writer, 'latex')
-        writer.write('\n')
-        for i in current_node.GetPrintableChildren():
-            i.GetPrinter()(writer, 'latex')
-            writer.write('\n')
-        writer.write('\n')
+  def PrintInLatexFormat(writer):
+    writer.write('\n%%')
+    current_node.PrintSelfToWriter(writer, 'latex')
+    writer.write('\n')
+    for i in current_node.GetPrintableChildren():
+      i.GetPrinter()(writer, 'latex')
+      writer.write('\n')
+    writer.write('\n')
 
-    return PrintTo
+  return PrintTo
+
 
 def DirectlyPrintSub(current_node):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        for t in current_node.GetPrintableChildren():
-            t.GetPrinter()(writer, 'beamer_latex')
-            writer.write('\n')
+  def PrintInBeamerLatexFormat(writer):
+    for t in current_node.GetPrintableChildren():
+      t.GetPrinter()(writer, 'beamer_latex')
+      writer.write('\n')
 
-    def PrintInHTMLFormat(writer):
-        for t in current_node.GetPrintableChildren():
-            t.GetPrinter()(writer)
-            writer.write(' <br class="help">')
+  def PrintInHTMLFormat(writer):
+    for t in current_node.GetPrintableChildren():
+      t.GetPrinter()(writer)
+      writer.write(' <br class="help">')
 
-    def PrintInLatexFormat(writer):
-        for t in current_node.GetPrintableChildren():
-            t.GetPrinter()(writer, 'latex')
-            writer.write('\n')
+  def PrintInLatexFormat(writer):
+    for t in current_node.GetPrintableChildren():
+      t.GetPrinter()(writer, 'latex')
+      writer.write('\n')
 
-    return PrintTo
+  return PrintTo
+
 
 def DirectlyPrintThisAndSub(current_node):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        writer.write(current_node.GetText(format = 'beamer_latex'))
-        writer.write('\n')
-        for t in current_node.GetPrintableChildren():
-            t.GetPrinter()(writer, 'beamer_latex')
-            writer.write('\n')
+  def PrintInBeamerLatexFormat(writer):
+    writer.write(current_node.GetText(format='beamer_latex'))
+    writer.write('\n')
+    for t in current_node.GetPrintableChildren():
+      t.GetPrinter()(writer, 'beamer_latex')
+      writer.write('\n')
 
-    def PrintInHTMLFormat(writer):
-        writer.write(current_node.GetText())
-        writer.write('<br>')
-        for t in current_node.GetPrintableChildren():
-            t.GetPrinter()(writer)
-            writer.write('<br>')
+  def PrintInHTMLFormat(writer):
+    writer.write(current_node.GetText())
+    writer.write('<br>')
+    for t in current_node.GetPrintableChildren():
+      t.GetPrinter()(writer)
+      writer.write('<br>')
 
-    def PrintInLatexFormat(writer):
-        writer.write(current_node.GetText(format = 'latex'))
-        writer.write('\n')
-        for t in current_node.GetPrintableChildren():
-            t.GetPrinter()(writer, 'latex')
-            writer.write('\n')
+  def PrintInLatexFormat(writer):
+    writer.write(current_node.GetText(format='latex'))
+    writer.write('\n')
+    for t in current_node.GetPrintableChildren():
+      t.GetPrinter()(writer, 'latex')
+      writer.write('\n')
 
-    return PrintTo
+  return PrintTo
 
 
 def PrintCurrentAsSection(current_node, tag):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        latex_tag = None
-        if tag == 'h2':
-            latex_tag = 'section'
-        elif tag == 'h3':
-            latex_tag = 'subsection'
-        elif tag == 'h4':
-            latex_tag = 'subsubsection'
-        assert latex_tag is not None
-        txt = current_node.GetText('latex')
-        if len(txt.strip()) > 0:
-            writer.write(r"\%s{" % latex_tag)
-            writer.write(txt)
-            writer.write("}\n")
-        DirectlyPrintSub(current_node)(writer, 'beamer_latex')
+  def PrintInBeamerLatexFormat(writer):
+    latex_tag = None
+    if tag == 'h2':
+      latex_tag = 'section'
+    elif tag == 'h3':
+      latex_tag = 'subsection'
+    elif tag == 'h4':
+      latex_tag = 'subsubsection'
+    assert latex_tag is not None
+    txt = current_node.GetText('latex')
+    if len(txt.strip()) > 0:
+      writer.write(r"\%s{" % latex_tag)
+      writer.write(txt)
+      writer.write("}\n")
+    DirectlyPrintSub(current_node)(writer, 'beamer_latex')
 
-    def PrintInHTMLFormat(writer):
-        writer.write("<%s>" % tag)
-        writer.write(current_node.GetText())
-        writer.write("</%s>" % tag)
-        DirectlyPrintSub(current_node)(writer)
+  def PrintInHTMLFormat(writer):
+    writer.write("<%s>" % tag)
+    writer.write(current_node.GetText())
+    writer.write("</%s>" % tag)
+    DirectlyPrintSub(current_node)(writer)
 
-    def PrintInLatexFormat(writer):
-        latex_tag = None
-        if tag == 'h2':
-            latex_tag = 'section'
-        elif tag == 'h3':
-            latex_tag = 'subsection'
-        elif tag == 'h4':
-            latex_tag = 'subsubsection'
-        assert latex_tag is not None
-        txt = current_node.GetText('latex')
-        if len(txt.strip()) > 0:
-            writer.write(r"\%s{" % latex_tag)
-            writer.write(txt)
-            writer.write("}\n")
-        DirectlyPrintSub(current_node)(writer, 'latex')
-    return PrintTo
+  def PrintInLatexFormat(writer):
+    latex_tag = None
+    if tag == 'h2':
+      latex_tag = 'section'
+    elif tag == 'h3':
+      latex_tag = 'subsection'
+    elif tag == 'h4':
+      latex_tag = 'subsubsection'
+    assert latex_tag is not None
+    txt = current_node.GetText('latex')
+    if len(txt.strip()) > 0:
+      writer.write(r"\%s{" % latex_tag)
+      writer.write(txt)
+      writer.write("}\n")
+    DirectlyPrintSub(current_node)(writer, 'latex')
+  return PrintTo
+
 
 def PrintTopLevel(current_node):
-    def PrintTo(writer, format = 'html'):
-        if format == 'html':
-            PrintInHTMLFormat(writer)
-        elif format == 'latex':
-            PrintInLatexFormat(writer)
-        elif format == 'beamer_latex':
-            PrintInBeamerLatexFormat(writer)
+  def PrintTo(writer, format='html'):
+    if format == 'html':
+      PrintInHTMLFormat(writer)
+    elif format == 'latex':
+      PrintInLatexFormat(writer)
+    elif format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
 
-    def PrintInBeamerLatexFormat(writer):
-        DirectlyPrintSub(current_node)(writer, format = 'beamer_latex')
+  def PrintInBeamerLatexFormat(writer):
+    DirectlyPrintSub(current_node)(writer, format='beamer_latex')
 
-    def PrintInLatexFormat(writer):
-        writer.write(r"\chapter{")
-        writer.write(current_node.GetText())
-        writer.write("}\n")
-        DirectlyPrintSub(current_node)(writer, format = 'latex')
+  def PrintInLatexFormat(writer):
+    writer.write(r"\chapter{")
+    writer.write(current_node.GetText())
+    writer.write("}\n")
+    DirectlyPrintSub(current_node)(writer, format='latex')
 
-    def PrintInHTMLFormat(writer):
-        writer.write("<center><h1>")
-        writer.write(current_node.GetText())
-        writer.write("</h1></center>")
-        DirectlyPrintSub(current_node)(writer)
-    return PrintTo
+  def PrintInHTMLFormat(writer):
+    writer.write("<center><h1>")
+    writer.write(current_node.GetText())
+    writer.write("</h1></center>")
+    DirectlyPrintSub(current_node)(writer)
+  return PrintTo
+
 
 def main():
-    try:
-        argv = gflags.FLAGS(sys.argv)
-    except gflags.FlagsError, e:
-        print '%s\nUsage: %s ARGS\n%s' % (e, sys.argv[0], gflags.FLAGS)
-        sys.exit(1)
-    logging.basicConfig(level = logging.INFO)
+  try:
+    argv = gflags.FLAGS(sys.argv)
+  except gflags.FlagsError as e:
+    print '%s\nUsage: %s ARGS\n%s' % (e, sys.argv[0], gflags.FLAGS)
+    sys.exit(1)
+  logging.basicConfig(level=logging.INFO)
 
-    if gflags.FLAGS.mindmap_file is None:
-        print 'Usage: %s ARGS\n%s' % (sys.argv[0], gflags.FLAGS)
-        sys.exit(1)
+  if gflags.FLAGS.mindmap_file is None:
+    print 'Usage: %s ARGS\n%s' % (sys.argv[0], gflags.FLAGS)
+    sys.exit(1)
 
-    org = Organization(
-        codecs.open(gflags.FLAGS.mindmap_file, 'r', 'utf8').read())
-    if gflags.FLAGS.html_file is not None:
-        org.OutputToHTML(gflags.FLAGS.html_file)
+  org = Organization(
+    codecs.open(gflags.FLAGS.mindmap_file, 'r', 'utf8').read())
+  if gflags.FLAGS.html_file is not None:
+    org.OutputToHTML(gflags.FLAGS.html_file)
 
-    if gflags.FLAGS.beamer_latex_file is not None:
-        org.OutputToBeamerLatex(gflags.FLAGS.beamer_latex_file)
+  if gflags.FLAGS.beamer_latex_file is not None:
+    org.OutputToBeamerLatex(gflags.FLAGS.beamer_latex_file)
 
-    if gflags.FLAGS.latex_file is not None:
-        org.OutputToLatex(gflags.FLAGS.latex_file)
+  if gflags.FLAGS.latex_file is not None:
+    org.OutputToLatex(gflags.FLAGS.latex_file)
 
 if __name__ == "__main__":
-    main()
+  main()

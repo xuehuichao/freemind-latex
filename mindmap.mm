@@ -1,6 +1,6 @@
 <map version="1.0.1">
 <!-- To view this file, download free mind mapping software FreeMind from http://freemind.sourceforge.net -->
-<node CREATED="1463949485986" ID="ID_713934282" MODIFIED="1463949489745" TEXT="Slides">
+<node CREATED="1463949485986" ID="ID_713934282" MODIFIED="1465781739791" TEXT="Title&#xa;subtitle&#xa;Author">
 <node CREATED="1463949651603" ID="ID_339403123" MODIFIED="1463949653927" POSITION="right" TEXT="SECTIONS"/>
 <node CREATED="1463949565069" ID="ID_1174509165" MODIFIED="1463949650969" POSITION="right" TEXT="First section">
 <node CREATED="1463949658088" ID="ID_520136329" MODIFIED="1463949660197" TEXT="First Slide">

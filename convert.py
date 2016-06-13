@@ -839,6 +839,26 @@ def PrintTopLevel(current_node):
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
+    cur_text_lines = current_node.GetText().split("\n")
+    title = cur_text_lines[0]
+    subtitle = ""
+    author = ""
+    if len(cur_text_lines) >= 2:
+      subtitle = cur_text_lines[1]
+    if len(cur_text_lines) >= 3:
+      author = cur_text_lines[2]
+
+    writer.write(r"""
+    \title{%s}
+    \subtitle{%s}
+    \author[%s]{%s}
+    \date{}
+
+    \begin{frame}
+    \maketitle
+    \end{frame}
+    """ % (title, subtitle, author, author))
+
     DirectlyPrintSub(current_node)(writer, format='beamer_latex')
 
   def PrintInLatexFormat(writer):

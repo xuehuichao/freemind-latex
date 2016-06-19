@@ -13,10 +13,10 @@ git clone https://github.com/xuehuichao/freemind-latex.git
 
 ### Usage
 ```sh
-xdg-open slides.pdf
-./inotify_beamer.sh
+xdg-open transformer/slides.pdf
+transformer/inotify_beamer.sh
 ```
-Meanwhile, open `mindmap.mm` in freemind, and start editing it. Upon file saves, the slides will be updated.
+Meanwhile, open `transformer/mindmap.mm` in freemind, and start editing it. Upon file saves, the slides will be updated.
 
 #### Generating PDF slides
 1. Create a freemind document. Place `PATH_TO_FREEMIND_LATEX/compile_beamer.sh` into the same directory.

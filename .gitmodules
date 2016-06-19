@@ -1,0 +1,3 @@
+[submodule "mapjs"]
+	path = mapjs
+	url = git@github.com:mindmup/mapjs.git

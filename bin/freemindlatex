@@ -1,0 +1,107 @@
+#!/usr/bin/python
+
+"""Command-line tool for compiling freemind document into a pdf document.
+"""
+
+import subprocess
+import sys
+import codecs
+import os
+import shutil
+import tempfile
+import convert
+
+
+class LatexCompilationError(Exception):
+  pass
+
+
+class BibtexCompilationError(Exception):
+  pass
+
+
+def InitDir(directory):
+  """Initializing the directory with example original content
+
+  Args:
+    directory: directory where we initialize the content.
+  """
+  example_dir = os.path.join(
+    os.path.dirname(
+      os.path.realpath(__file__)),
+    "../example")
+  shutil.copyfile(
+    os.path.join(
+      example_dir, "mindmap.mm"), os.path.join(
+      directory, "mindmap.mm"))
+
+
+def _CompileLatexAtDir(working_dir, filename):
+  proc = subprocess.Popen(
+    ["pdflatex", "-interaction=nonstopmod",
+     filename], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  stdout, stderr = proc.communicate()
+  if proc.returncode != 0:
+    raise LatexCompilationError(stdout)
+
+
+def _CompileBibtexAtDir(working_dir, filename_prefix):
+  proc = subprocess.Popen(
+    ["bibtex",
+     filename_prefix], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  stdout, stderr = proc.communicate()
+  if proc.returncode != 0:
+    raise BibtexCompilationError(stdout)
+
+
+def CompileDir(directory):
+  compile_dir = tempfile.mkdtemp()
+  work_dir = os.path.join(directory, "working")
+  shutil.copytree(directory, work_dir)
+  static_file_dir = os.path.join(
+    os.path.dirname(
+      os.path.realpath(__file__)),
+    "../static_files")
+  for filename in os.listdir(static_file_dir):
+    shutil.copyfile(
+      os.path.join(
+        static_file_dir, filename), os.path.join(
+        work_dir, filename))
+  org = convert.Organization(
+    codecs.open(
+      os.path.join(
+        work_dir,
+        "mindmap.mm"),
+      'r',
+      'utf8').read())
+  org.OutputToBeamerLatex(os.path.join(work_dir, "mindmap.tex"))
+
+  _CompileLatexAtDir(work_dir, "slides.tex")
+  try:
+    _CompileBibtexAtDir(work_dir, "slides")
+  except BibtexCompilationError as e:
+    pass
+  _CompileLatexAtDir(work_dir, "slides.tex")
+  _CompileLatexAtDir(work_dir, "slides.tex")
+
+  shutil.copyfile(
+    os.path.join(
+      work_dir, "slides.pdf"), os.path.join(
+      directory, "slides.pdf"))
+
+
+def main():
+  if len(sys.argv) != 2:
+    print "Usage: 'freemindlatex init' to initialize the current directory"
+    print "Use 'freemindlatex compile' to compile the content"
+    print "Use 'freemindlatex start' to start a server locally at port 8424"
+    sys.exit(1)
+
+  cwd = os.getcwd()
+  if sys.argv[1] == 'init':
+    InitDir(cwd)
+  elif sys.argv[1] == 'compile':
+    CompileDir(cwd)
+
+if __name__ == "__main__":
+  main()

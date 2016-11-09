@@ -1,6 +1,10 @@
 #!/usr/bin/python
 
 """Command-line tool for compiling freemind document into a pdf document.
+
+Usage:
+  freemindlatex init   # initilizes the current directory for the project
+  freemindlatex compile  # compile the document into beamer slides
 """
 
 import subprocess
@@ -37,6 +41,15 @@ def InitDir(directory):
 
 
 def _CompileLatexAtDir(working_dir, filename):
+  """Runs pdflatex at the working directory.
+
+  Args:
+    working_dir: the working directory of the freemindlatex project, e.g. /tmp/123
+    filename: the generated .tex file by parsing the .mm file.
+
+  Raises:
+    LatexCompilationError: when the pdflatex command does not work.
+  """
   proc = subprocess.Popen(
     ["pdflatex", "-interaction=nonstopmod",
      filename], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -45,7 +58,16 @@ def _CompileLatexAtDir(working_dir, filename):
     raise LatexCompilationError(stdout)
 
 
-def _CompileBibtexAtDir(working_dir, filename_prefix):
+def _CompileBibtexAtDir(working_dir, filename_prefix="slides"):
+  """Runs bibtex at the working directory.
+
+  Args:
+    working_dir: the working directory of the freemindlatex project, e.g. /tmp/123
+    filename_prefix: the prefix of the .tex, .aux file names of the final generated .pdf file.
+
+  Raises:
+    BibtexCompilationError: when bibtex compilation encounters some errors or warnings
+  """
   proc = subprocess.Popen(
     ["bibtex",
      filename_prefix], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -55,6 +77,12 @@ def _CompileBibtexAtDir(working_dir, filename_prefix):
 
 
 def CompileDir(directory):
+  """Compiles the files in user's directory, and copy the resulting pdf file back.
+
+  Args:
+    directory: directory where user's files locate
+  """
+
   compile_dir = tempfile.mkdtemp()
   work_dir = os.path.join(directory, "working")
   shutil.copytree(directory, work_dir)
@@ -88,13 +116,13 @@ def CompileDir(directory):
     os.path.join(
       work_dir, "slides.pdf"), os.path.join(
       directory, "slides.pdf"))
+  shutil.rmtree(work_dir)
 
 
 def main():
   if len(sys.argv) != 2:
-    print "Usage: 'freemindlatex init' to initialize the current directory"
-    print "Use 'freemindlatex compile' to compile the content"
-    print "Use 'freemindlatex start' to start a server locally at port 8424"
+    print "Incorrect number of parameters"
+    print __doc__
     sys.exit(1)
 
   cwd = os.getcwd()
@@ -102,6 +130,10 @@ def main():
     InitDir(cwd)
   elif sys.argv[1] == 'compile':
     CompileDir(cwd)
+  else:
+    print "Unrecognized commandline option"
+    print __doc__
+    sys.exit(1)
 
 if __name__ == "__main__":
   main()

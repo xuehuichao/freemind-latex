@@ -14,6 +14,10 @@ import os
 import shutil
 import tempfile
 import convert
+import gflags
+
+gflags.DEFINE_integer("seconds_between_rechecking", 1,
+                      "Time between checking if files have changed.")
 
 
 class LatexCompilationError(Exception):
@@ -119,6 +123,66 @@ def CompileDir(directory):
   shutil.rmtree(work_dir)
 
 
+def _GetMTime(filename):
+  """Get the time of the last modification
+  """
+  try:
+    return path.getmtime(filename)
+  except:
+    return None
+
+
+def _GetMTimeListForDir(directory, suffixes=['.mm', '.png', '.jpg']):
+  """Getting the modification time for all user files in a directory.
+
+  Returns: a sorted list of pairs in form of ('/file1', 1234567)
+  """
+  mtime_list = []
+  for dirpath, dirnames, filenames in os.walk(dirnames):
+    for filename in [f for f in filenames if any(
+        f.endswith(suf) for suf in suffixes)]:
+      filepath = os.path.join(dirpath, filename)
+      mtime_list.append((filepath, _GetMTime(filepath)))
+  return sorted(mtime_list)
+
+
+def RunEditingEnvironment(directory):
+  """Start the editing/previewing environment, monitor file changes,
+  and re-compile accordingly.
+  """
+  mindmap_file_loc = os.path.join(directory, 'mindmap.mm')
+  if not os.path.exists(mindmap_file_loc):
+    print "Empty directory... Initializing it"
+    InitDir(directory)
+
+  CompileDir(directory)
+  evince_proc = subprocess.Popen(
+    ['evince', os.path.join(directory, 'slides.pdf')])
+
+  freemind_sh_path = os.path.join(
+    os.path.dirname(
+      os.path.realpath(__file__)), '../freemind/freemind.sh')
+  freemind_proc = subprocess.Popen(
+    ['sh', freemind_sh_path, mindmap_file_loc])
+  mtime_list = _GetMTimeListForDir(directory)
+  try:
+    while True:
+      time.sleep(gflags.FLAGS.seconds_between_rechecking)
+      new_mtime_list = _GetMTimeListForDir(directory)
+      if new_mtime_list != mtime_list:
+        mtime_list = new_mtime_list
+        try:
+          CompileDir(directory)
+        except LatexCompilationError as e:
+          print "Error during latex compilation"
+          print e
+
+  except KeybordInterrupt as e:
+    print "Exiting freemindlatex ..."
+    freemind_proc.kill()
+    evince_proc.kill()
+
+
 def main():
   if len(sys.argv) != 2:
     print "Incorrect number of parameters"
@@ -130,6 +194,8 @@ def main():
     InitDir(cwd)
   elif sys.argv[1] == 'compile':
     CompileDir(cwd)
+  elif sys.argv[1] == 'edit':
+    RunEditingEnvironment(cwd)
   else:
     print "Unrecognized commandline option"
     print __doc__

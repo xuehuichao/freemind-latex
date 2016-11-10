@@ -9,6 +9,7 @@ Usage:
 
 import subprocess
 import sys
+import time
 import codecs
 import os
 import shutil
@@ -131,8 +132,9 @@ def _GetMTime(filename):
   """Get the time of the last modification
   """
   try:
-    return path.getmtime(filename)
-  except:
+    return os.path.getmtime(filename)
+  except Exception as e:
+    print e
     return None
 
 
@@ -142,7 +144,7 @@ def _GetMTimeListForDir(directory, suffixes=['.mm', '.png', '.jpg']):
   Returns: a sorted list of pairs in form of ('/file1', 1234567)
   """
   mtime_list = []
-  for dirpath, dirnames, filenames in os.walk(dirnames):
+  for dirpath, dirnames, filenames in os.walk(directory):
     for filename in [f for f in filenames if any(
         f.endswith(suf) for suf in suffixes)]:
       filepath = os.path.join(dirpath, filename)
@@ -179,15 +181,28 @@ def RunEditingEnvironment(directory):
       if new_mtime_list != mtime_list:
         mtime_list = new_mtime_list
         try:
+          print "re-compiling..."
           CompileDir(directory)
         except LatexCompilationError as e:
           print "Error during latex compilation"
           print e
 
-  except (KeybordInterrupt, UserExitedEditingEnvironment) as e:
+  except KeyboardInterrupt as e:
+    print "User exiting with ctrl-c."
+
+  except UserExitedEditingEnvironment as e:
+    print "Exiting because one editing window has been closed."
+
+  finally:
     print "Exiting freemindlatex ..."
-    freemind_proc.kill()
-    evince_proc.kill()
+    try:
+      freemind_proc.kill()
+    except OSError:
+      pass
+    try:
+      evince_proc.kill()
+    except OSError:
+      pass
 
 
 def main():

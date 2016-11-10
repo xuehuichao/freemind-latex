@@ -28,6 +28,10 @@ class BibtexCompilationError(Exception):
   pass
 
 
+class UserExitedEditingEnvironment(Exception):
+  pass
+
+
 def InitDir(directory):
   """Initializing the directory with example original content
 
@@ -168,6 +172,9 @@ def RunEditingEnvironment(directory):
   try:
     while True:
       time.sleep(gflags.FLAGS.seconds_between_rechecking)
+      if freemind_proc.poll() is not None or evince_proc.poll() is not None:
+        raise UserExitedEditingEnvironment
+
       new_mtime_list = _GetMTimeListForDir(directory)
       if new_mtime_list != mtime_list:
         mtime_list = new_mtime_list
@@ -177,7 +184,7 @@ def RunEditingEnvironment(directory):
           print "Error during latex compilation"
           print e
 
-  except KeybordInterrupt as e:
+  except (KeybordInterrupt, UserExitedEditingEnvironment) as e:
     print "Exiting freemindlatex ..."
     freemind_proc.kill()
     evince_proc.kill()

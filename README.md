@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/xuehuichao/freemind-latex.svg?branch=master)](https://travis-ci.org/xuehuichao/freemind-latex)
+
+
 # Write Slides with Mindmaps
 This tool converts freemind documents into LaTex Beamer.
 

@@ -1,3 +1,2 @@
-python-gflags
 bibtexparser
 pypdf2

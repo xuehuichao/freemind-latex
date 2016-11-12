@@ -3,7 +3,8 @@ python:
   - "2.7"
 
 install:
-  - travis_retry pip install python-gflags bibtexparser pypdf2
+  - pip install -U pip
+  - pip install python-gflags bibtexparser pypdf2
 
 virtualenv:
   system_site_packages: true

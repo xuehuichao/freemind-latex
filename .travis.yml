@@ -2,6 +2,6 @@ language: python
 python:
   - "2.7"
 # command to install dependencies
-install: "pip install --user bibtexparser python-gflags pypdf2"
+install: "pip install bibtexparser python-gflags pypdf2"
 # command to run tests
 script: "python -m unittest discover tests"

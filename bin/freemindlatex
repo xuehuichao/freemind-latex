@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """Command-line tool for compiling freemind document into a pdf document.
 

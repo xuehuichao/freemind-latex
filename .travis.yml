@@ -2,12 +2,12 @@ language: python
 python:
   - "2.7"
 
-virtualenv:
-  system_site_packages: true
+addons:
+  apt:
+    packages:
+      - python-gflags
+      - python-bibtexparser
+      - python-pypdf2
 
-# command to install dependencies
-install:
-  - "pip install bibtexparser python-gflags pypdf2"
-  
 # command to run tests
 script: "python -m unittest discover tests"

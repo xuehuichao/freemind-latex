@@ -4,11 +4,10 @@ python:
 
 install:
   - travis_retry pip install python-gflags bibtexparser pypdf2
-  # Create a separate no-dependencies virtualenv to make sure all imports
-  # of optional-dependencies are guarded.
-  - virtualenv ./nodeps
-  - pip freeze
 
+virtualenv:
+  system_site_packages: true
+  
 # command to run tests
 script:
   - python -m unittest discover tests

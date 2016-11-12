@@ -7,8 +7,7 @@ install:
   # Create a separate no-dependencies virtualenv to make sure all imports
   # of optional-dependencies are guarded.
   - virtualenv ./nodeps
-  - ./nodeps/bin/python setup.py install
-  - curl-config --version; pip freeze
+  - pip freeze
 
 # command to run tests
 script: "python -m unittest discover tests"

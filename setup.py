@@ -21,5 +21,6 @@ setup(
       "freemindlatex = freemindlatex.__main__:main"]},
   data_files=[
     ("static_files", glob.glob("static_files/*")),
-  ]
+  ],
+  install_requires=open("requirements.txt").read().strip().split(),
 )

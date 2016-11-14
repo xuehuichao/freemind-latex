@@ -6,29 +6,25 @@ import unittest
 import shutil
 import tempfile
 import PyPDF2
+import freemindlatex
 
 
 class TestCompilingExampleDir(unittest.TestCase):
 
   def setUp(self):
     root_dir = os.getcwd()
-    self._scripts_dir = os.path.join(root_dir, "bin")
+    self._scripts_dir = os.path.join(root_dir, "src")
     self._script_path = os.path.join(self._scripts_dir, "freemindlatex")
     self._test_dir = tempfile.mkdtemp()
     self.assertIsNotNone(self._test_dir)
 
-    proc = subprocess.Popen([self._script_path, "init"], cwd=self._test_dir)
-    proc.wait()
-    self.assertEquals(0, proc.returncode)
+    freemindlatex.InitDir(self._test_dir)
 
   def tearDown(self):
     shutil.rmtree(self._test_dir)
 
   def testCompilingDirectory(self):
-    proc = subprocess.Popen(
-      [self._script_path, "compile"], cwd=self._test_dir)
-    stdout, stderr = proc.communicate()
-    self.assertEquals(0, proc.returncode)
+    freemindlatex.CompileDir(self._test_dir)
 
     slides_file_loc = os.path.join(
       self._test_dir,

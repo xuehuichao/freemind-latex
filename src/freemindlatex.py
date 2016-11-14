@@ -3,8 +3,10 @@
 """Command-line tool for compiling freemind document into a pdf document.
 
 Usage:
-  freemindlatex init   # initilizes the current directory for the project
-  freemindlatex compile  # compile the document into beamer slides
+  Run "freemindlatex edit" in a directory.
+
+  It will create the freemind file for you, launch freemind and evince, then
+  recompile the freemind file into slides upon your modifications.
 """
 
 import subprocess

@@ -6,7 +6,7 @@ import unittest
 import shutil
 import tempfile
 import PyPDF2
-import freemindlatex
+from freemindlatex import __main__
 
 
 class TestBasicUsecase(unittest.TestCase):
@@ -23,8 +23,8 @@ class TestBasicUsecase(unittest.TestCase):
   def testCompilingInitialDirectory(self):
     """In a new directory, we will prepare an empty content to start with.
     """
-    freemindlatex.InitDir(self._test_dir)
-    freemindlatex.CompileDir(self._test_dir)
+    __main__.InitDir(self._test_dir)
+    __main__.CompileDir(self._test_dir)
 
     slides_file_loc = os.path.join(
       self._test_dir,

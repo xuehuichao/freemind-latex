@@ -44,7 +44,7 @@ def InitDir(directory):
   example_dir = os.path.join(
     os.path.dirname(
       os.path.realpath(__file__)),
-    "../example")
+    "../../example")
   shutil.copyfile(
     os.path.join(
       example_dir, "mindmap.mm"), os.path.join(
@@ -100,7 +100,7 @@ def CompileDir(directory):
   static_file_dir = os.path.join(
     os.path.dirname(
       os.path.realpath(__file__)),
-    "../static_files")
+    "../../static_files")
   for filename in os.listdir(static_file_dir):
     shutil.copyfile(
       os.path.join(
@@ -169,7 +169,7 @@ def RunEditingEnvironment(directory):
 
   freemind_sh_path = os.path.join(
     os.path.dirname(
-      os.path.realpath(__file__)), '../freemind/freemind.sh')
+      os.path.realpath(__file__)), '../../freemind/freemind.sh')
   freemind_proc = subprocess.Popen(
     ['sh', freemind_sh_path, mindmap_file_loc])
   mtime_list = _GetMTimeListForDir(directory)

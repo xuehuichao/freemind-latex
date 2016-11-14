@@ -62,7 +62,7 @@ def _CompileLatexAtDir(working_dir, filename):
     LatexCompilationError: when the pdflatex command does not work.
   """
   proc = subprocess.Popen(
-    ["pdflatex", "-interaction=nonstopmod",
+    ["pdflatex", "-interaction=nonstopmode",
      filename], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, stderr = proc.communicate()
   if proc.returncode != 0:

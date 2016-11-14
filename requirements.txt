@@ -2,3 +2,4 @@ six
 python-gflags
 bibtexparser
 pypdf2
+timeout-decorator

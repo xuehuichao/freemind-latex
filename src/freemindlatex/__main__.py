@@ -21,6 +21,8 @@ import gflags
 
 gflags.DEFINE_integer("seconds_between_rechecking", 1,
                       "Time between checking if files have changed.")
+gflags.DEFINE_string("latex_error_log_file", "latex.logs",
+                     "Log file for latex compilation errors.")
 
 
 class LatexCompilationError(Exception):
@@ -186,8 +188,10 @@ def RunEditingEnvironment(directory):
           print "re-compiling..."
           CompileDir(directory)
         except LatexCompilationError as e:
-          print "Error during latex compilation"
-          print e
+          print ("Error during latex compilation. Dumped errors into log file "
+                 "%s.") % gflags.FLAGS.latex_error_log_file
+          with open(gflags.FLAGS.latex_error_log_file, "w") as logfile:
+            logfile.write(str(e))
 
   except KeyboardInterrupt as e:
     print "User exiting with ctrl-c."

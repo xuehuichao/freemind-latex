@@ -1,4 +1,4 @@
-"""Users should compile files in their local directory by a simple command."""
+"""Using the script on existing mm files"""
 
 import os
 import subprocess
@@ -9,21 +9,21 @@ import PyPDF2
 import freemindlatex
 
 
-class TestCompilingExampleDir(unittest.TestCase):
+class TestBasicUsecase(unittest.TestCase):
+  """Our program compiles in working directories.
+  """
 
   def setUp(self):
-    root_dir = os.getcwd()
-    self._scripts_dir = os.path.join(root_dir, "src")
-    self._script_path = os.path.join(self._scripts_dir, "freemindlatex")
     self._test_dir = tempfile.mkdtemp()
     self.assertIsNotNone(self._test_dir)
-
-    freemindlatex.InitDir(self._test_dir)
 
   def tearDown(self):
     shutil.rmtree(self._test_dir)
 
-  def testCompilingDirectory(self):
+  def testCompilingInitialDirectory(self):
+    """In a new directory, we will prepare an empty content to start with.
+    """
+    freemindlatex.InitDir(self._test_dir)
     freemindlatex.CompileDir(self._test_dir)
 
     slides_file_loc = os.path.join(

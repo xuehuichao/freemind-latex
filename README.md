@@ -51,6 +51,6 @@ cd freemind
 curl -L 'http://downloads.sourceforge.net/project/freemind/freemind/1.0.0/freemind-bin-max-1.0.0.zip?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Ffreemind%2Ffiles%2Ffreemind%2F1.0.0%2F&ts=1478756204&use_mirror=pilotfiber' -o freemind.zip
 unzip freemind.zip
 # Enablig the freemindlatex command
-echo "alias freemindlatex=$INSTALLDIR/bin/freemindlatex" | cat >> ~/.bash_profile
+echo "alias freemindlatex=$INSTALLDIR/src/freemindlatex.py" | cat >> ~/.bash_profile
 ```
 Then re-login (e.g. ssh localhost), and you will have access to freemindlatex

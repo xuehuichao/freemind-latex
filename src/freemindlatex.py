@@ -3,8 +3,10 @@
 """Command-line tool for compiling freemind document into a pdf document.
 
 Usage:
-  freemindlatex init   # initilizes the current directory for the project
-  freemindlatex compile  # compile the document into beamer slides
+  Run "freemindlatex edit" in a directory.
+
+  It will create the freemind file for you, launch freemind and evince, then
+  recompile the freemind file into slides upon your modifications.
 """
 
 import subprocess
@@ -60,7 +62,7 @@ def _CompileLatexAtDir(working_dir, filename):
     LatexCompilationError: when the pdflatex command does not work.
   """
   proc = subprocess.Popen(
-    ["pdflatex", "-interaction=nonstopmod",
+    ["pdflatex", "-interaction=nonstopmode",
      filename], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, stderr = proc.communicate()
   if proc.returncode != 0:

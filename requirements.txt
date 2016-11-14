@@ -1,1 +1,4 @@
+six
+python-gflags
+bibtexparser
 pypdf2

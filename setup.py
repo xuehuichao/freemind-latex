@@ -1,6 +1,14 @@
 import glob
+import os
 from setuptools import setup
 from setuptools import find_packages
+
+freemind_dirlist = []
+for (path, dirs, filenames) in os.walk("freemind"):
+  freemind_dirlist.append(
+    (os.path.join("share/freemindlatex", path),
+     [os.path.join(path, filename) for filename in filenames])
+  )
 
 setup(
   name="freemindlatex",
@@ -8,7 +16,7 @@ setup(
   author="Huichao Xue",
   author_email="xue.huichao@gmail.com",
   url="https://github.com/xuehuichao/freemind-latex",
-  license="MIT",
+  license="GPLv2",
   description="Compiles your freemind document into latex beamer.",
   keywords="freemind beamer latex slides editor",
   packages=find_packages("src"),
@@ -20,7 +28,8 @@ setup(
   entry_points={'console_scripts': [
       "freemindlatex = freemindlatex.__main__:main"]},
   data_files=[
-    ("static_files", glob.glob("static_files/*")),
-  ],
+    ("share/freemindlatex/static_files", glob.glob("static_files/*")),
+    ("share/freemindlatex/example", glob.glob("example/*")),
+  ] + freemind_dirlist,
   install_requires=open("requirements.txt").read().strip().split(),
 )

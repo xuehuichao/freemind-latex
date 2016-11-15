@@ -46,7 +46,7 @@ def InitDir(directory):
   example_dir = os.path.join(
     os.path.dirname(
       os.path.realpath(__file__)),
-    "../../example")
+    "../../../../share/freemindlatex/example")
   shutil.copyfile(
     os.path.join(
       example_dir, "mindmap.mm"), os.path.join(
@@ -102,7 +102,7 @@ def CompileDir(directory):
   static_file_dir = os.path.join(
     os.path.dirname(
       os.path.realpath(__file__)),
-    "../../static_files")
+    "../../../../share/freemindlatex/static_files")
   for filename in os.listdir(static_file_dir):
     shutil.copyfile(
       os.path.join(
@@ -170,7 +170,10 @@ def RunEditingEnvironment(directory):
     ['evince', os.path.join(directory, 'slides.pdf')])
 
   # TODO(xuehuichao): install freemind's 1.0.0 version during the first run.
-  freemind_sh_path = 'freemind.sh'
+  freemind_sh_path = os.path.join(
+    os.path.dirname(
+      os.path.realpath(__file__)),
+    "../../../../share/freemindlatex/freemind/freemind.sh")
   freemind_log_path = os.path.join(directory, 'freemind.log')
   freemind_log_file = open(freemind_log_path, 'w')
   freemind_proc = subprocess.Popen(
@@ -219,6 +222,7 @@ def main():
     print __doc__
     sys.exit(1)
 
+  gflags.FLAGS(sys.argv)
   cwd = os.getcwd()
   RunEditingEnvironment(cwd)
 

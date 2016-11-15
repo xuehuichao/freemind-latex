@@ -40,11 +40,4 @@ sudo apt-get install texlive-full python evince freemind
 git clone https://github.com/xuehuichao/freemind-latex.git
 cd freemind-latex
 pip install . --user
-
-mkdir freemind
-cd freemind
-curl -L 'http://downloads.sourceforge.net/project/freemind/freemind/1.0.0/freemind-bin-max-1.0.0.zip?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Ffreemind%2Ffiles%2Ffreemind%2F1.0.0%2F&ts=1478756204&use_mirror=pilotfiber' -o freemind.zip
-unzip freemind.zip
-# Enablig the freemindlatex command
-echo "alias freemind.sh=`pwd`/freemind.sh" | cat >> ~/.bash_profile
 ```

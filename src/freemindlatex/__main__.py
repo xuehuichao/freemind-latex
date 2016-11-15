@@ -3,7 +3,7 @@
 """Command-line tool for compiling freemind document into a pdf document.
 
 Usage:
-  Run "freemindlatex edit" in a directory.
+  Run "freemindlatex" in a directory.
 
   It will create the freemind file for you, launch freemind and evince, then
   recompile the freemind file into slides upon your modifications.
@@ -169,9 +169,8 @@ def RunEditingEnvironment(directory):
   evince_proc = subprocess.Popen(
     ['evince', os.path.join(directory, 'slides.pdf')])
 
-  freemind_sh_path = os.path.join(
-    os.path.dirname(
-      os.path.realpath(__file__)), '../../freemind/freemind.sh')
+  # TODO(xuehuichao): install freemind's 1.0.0 version during the first run.
+  freemind_sh_path = 'freemind.sh'
   freemind_log_path = os.path.join(directory, 'freemind.log')
   freemind_log_file = open(freemind_log_path, 'w')
   freemind_proc = subprocess.Popen(
@@ -215,22 +214,13 @@ def RunEditingEnvironment(directory):
 
 
 def main():
-  if len(sys.argv) != 2:
-    print "Incorrect number of parameters"
+  if len(sys.argv) != 1:
+    print "freemindlatex does not take parameters"
     print __doc__
     sys.exit(1)
 
   cwd = os.getcwd()
-  if sys.argv[1] == 'init':
-    InitDir(cwd)
-  elif sys.argv[1] == 'compile':
-    CompileDir(cwd)
-  elif sys.argv[1] == 'edit':
-    RunEditingEnvironment(cwd)
-  else:
-    print "Unrecognized commandline option"
-    print __doc__
-    sys.exit(1)
+  RunEditingEnvironment(cwd)
 
 if __name__ == "__main__":
   main()

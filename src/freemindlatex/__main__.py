@@ -18,6 +18,7 @@ import shutil
 import tempfile
 import convert
 import gflags
+import logging
 
 gflags.DEFINE_integer("seconds_between_rechecking", 1,
                       "Time between checking if files have changed.")
@@ -97,7 +98,8 @@ def CompileDir(directory):
   """
 
   compile_dir = tempfile.mkdtemp()
-  work_dir = os.path.join(directory, "working")
+  work_dir = os.path.join(compile_dir, "working")
+  logging.info("Compiling at %s", work_dir)
   shutil.copytree(directory, work_dir)
   static_file_dir = os.path.join(
     os.path.dirname(
@@ -129,7 +131,7 @@ def CompileDir(directory):
     os.path.join(
       work_dir, "slides.pdf"), os.path.join(
       directory, "slides.pdf"))
-  shutil.rmtree(work_dir)
+  shutil.rmtree(compile_dir)
 
 
 def _GetMTime(filename):
@@ -189,22 +191,22 @@ def RunEditingEnvironment(directory):
       if new_mtime_list != mtime_list:
         mtime_list = new_mtime_list
         try:
-          print "re-compiling..."
+          logging.info("re-compiling...")
           CompileDir(directory)
         except LatexCompilationError as e:
-          print ("Error during latex compilation. Dumped errors into log file "
-                 "%s.") % gflags.FLAGS.latex_error_log_file
+          logging.error("Error during latex compilation. Dumped errors into log file "
+                        "%s.", gflags.FLAGS.latex_error_log_file)
           with open(gflags.FLAGS.latex_error_log_file, "w") as logfile:
             logfile.write(str(e))
 
   except KeyboardInterrupt as e:
-    print "User exiting with ctrl-c."
+    logging.info("User exiting with ctrl-c.")
 
   except UserExitedEditingEnvironment as e:
-    print "Exiting because one editing window has been closed."
+    logging.info("Exiting because one editing window has been closed.")
 
   finally:
-    print "Exiting freemindlatex ..."
+    logging.info("Exiting freemindlatex ...")
     freemind_log_file.close()
     try:
       freemind_proc.kill()
@@ -222,6 +224,9 @@ def main():
     print __doc__
     sys.exit(1)
 
+  logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(threadName)s %(message)s')
   gflags.FLAGS(sys.argv)
   cwd = os.getcwd()
   RunEditingEnvironment(cwd)

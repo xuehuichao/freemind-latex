@@ -172,8 +172,10 @@ def RunEditingEnvironment(directory):
   freemind_sh_path = os.path.join(
     os.path.dirname(
       os.path.realpath(__file__)), '../../freemind/freemind.sh')
+  freemind_log_path = os.path.join(directory, 'freemind.log')
+  freemind_log_file = open(freemind_log_path, 'w')
   freemind_proc = subprocess.Popen(
-    ['sh', freemind_sh_path, mindmap_file_loc])
+    ['sh', freemind_sh_path, mindmap_file_loc], stdout=freemind_log_file, stderr=freemind_log_file)
   mtime_list = _GetMTimeListForDir(directory)
   try:
     while True:
@@ -201,6 +203,7 @@ def RunEditingEnvironment(directory):
 
   finally:
     print "Exiting freemindlatex ..."
+    freemind_log_file.close()
     try:
       freemind_proc.kill()
     except OSError:

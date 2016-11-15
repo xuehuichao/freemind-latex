@@ -19,6 +19,7 @@ import tempfile
 import convert
 import gflags
 import logging
+import platform
 
 gflags.DEFINE_integer("seconds_between_rechecking", 1,
                       "Time between checking if files have changed.")
@@ -158,6 +159,23 @@ def _GetMTimeListForDir(directory, suffixes=['.mm', '.png', '.jpg']):
   return sorted(mtime_list)
 
 
+def _LaunchViewerProcess(filename):
+  """Launch the viewer application under the current platform
+
+  Args:
+    filename: the filename of the pdf file to view
+  Returns:
+    The subprocess of the viewer
+  """
+  launch_base_command = []
+  if platform.system() == "Darwin":  # MacOSX
+    launch_base_command = ["open", "-W", "-a", "Skim"]
+  elif platform.system() == "Linux":
+    launch_base_command = ["evince"]
+
+  return subprocess.Popen(launch_base_command + [filename])
+
+
 def RunEditingEnvironment(directory):
   """Start the editing/previewing environment, monitor file changes,
   and re-compile accordingly.
@@ -168,8 +186,7 @@ def RunEditingEnvironment(directory):
     InitDir(directory)
 
   CompileDir(directory)
-  evince_proc = subprocess.Popen(
-    ['evince', os.path.join(directory, 'slides.pdf')])
+  viewer_proc = _LaunchViewerProcess(os.path.join(directory, 'slides.pdf'))
 
   # TODO(xuehuichao): install freemind's 1.0.0 version during the first run.
   freemind_sh_path = os.path.join(
@@ -184,7 +201,7 @@ def RunEditingEnvironment(directory):
   try:
     while True:
       time.sleep(gflags.FLAGS.seconds_between_rechecking)
-      if freemind_proc.poll() is not None or evince_proc.poll() is not None:
+      if freemind_proc.poll() is not None or viewer_proc.poll() is not None:
         raise UserExitedEditingEnvironment
 
       new_mtime_list = _GetMTimeListForDir(directory)
@@ -213,7 +230,7 @@ def RunEditingEnvironment(directory):
     except OSError:
       pass
     try:
-      evince_proc.kill()
+      viewer_proc.kill()
     except OSError:
       pass
 

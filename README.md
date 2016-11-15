@@ -33,10 +33,28 @@ This tool converts a freemind document into PDF slides. With this tool, you may 
 
 The tool runs on Linux and MacOS, with Python.
 ## Installation
-You'll need to first install latex, python, python-bibtexparser, python-gflags.
-For example, in Ubuntu, that would be
+You'll need to first install latex, python and evince
+
+### Linux
+
+Install Latex and most of the packages. For example, in Ubuntu, that would be
 ```sh
-sudo apt-get install texlive-full python evince freemind
+sudo apt-get install texlive-full python evince
+git clone https://github.com/xuehuichao/freemind-latex.git
+cd freemind-latex
+pip install . --user
+```
+
+### MacOS
+
+You'll need to install
+
+1. MacTex: https://tug.org/mactex/
+2. Skim: http://skim-app.sourceforge.net/
+
+Then
+```sh
+sudo easy_install pip
 git clone https://github.com/xuehuichao/freemind-latex.git
 cd freemind-latex
 pip install . --user

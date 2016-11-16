@@ -23,7 +23,7 @@ import platform
 
 gflags.DEFINE_integer("seconds_between_rechecking", 1,
                       "Time between checking if files have changed.")
-gflags.DEFINE_string("latex_error_log_file", "latex.logs",
+gflags.DEFINE_string("latex_error_log_filename", "latex.log",
                      "Log file for latex compilation errors.")
 
 
@@ -63,7 +63,7 @@ def _CompileLatexAtDir(working_dir, filename):
     filename: the generated .tex file by parsing the .mm file.
 
   Raises:
-    LatexCompilationError: when the pdflatex command does not work.
+    LatexCompilationError: when the pdflatex command come back with error messages.
   """
   proc = subprocess.Popen(
     ["pdflatex", "-interaction=nonstopmode",
@@ -91,26 +91,18 @@ def _CompileBibtexAtDir(working_dir, filename_prefix="slides"):
     raise BibtexCompilationError(stdout)
 
 
-def CompileDir(directory):
-  """Compiles the files in user's directory, and copy the resulting pdf file back.
+def _CompileInWorkingDirectory(work_dir):
+  """Compiles files in a working dir (temporary).
 
   Args:
-    directory: directory where user's files locate
-  """
+    work_dir: Directory containing the running files: mindmap.mm, and the image files.
 
-  compile_dir = tempfile.mkdtemp()
-  work_dir = os.path.join(compile_dir, "working")
-  logging.info("Compiling at %s", work_dir)
-  shutil.copytree(directory, work_dir)
-  static_file_dir = os.path.join(
-    os.path.dirname(
-      os.path.realpath(__file__)),
-    "../../../../share/freemindlatex/static_files")
-  for filename in os.listdir(static_file_dir):
-    shutil.copyfile(
-      os.path.join(
-        static_file_dir, filename), os.path.join(
-        work_dir, filename))
+  Returns: Nothing.
+
+  Raises:
+    LatexCompilationError: when error running latex
+    BibtexCompilationError: when error running bibtex
+  """
   org = convert.Organization(
     codecs.open(
       os.path.join(
@@ -128,11 +120,56 @@ def CompileDir(directory):
   _CompileLatexAtDir(work_dir, "slides.tex")
   _CompileLatexAtDir(work_dir, "slides.tex")
 
-  shutil.copyfile(
-    os.path.join(
-      work_dir, "slides.pdf"), os.path.join(
-      directory, "slides.pdf"))
-  shutil.rmtree(compile_dir)
+
+def CompileDir(directory):
+  """Compiles the files in user's directory, and copy the resulting pdf file back.
+
+  The function will build a temporary directory, prepare its content, and compile.
+  When there is a latex compilation error, we will put the latex error log at latex.log
+  (or anything else specified by latex_error_log_filename).
+
+  Returns: boolean indicating if the compilation was successful.
+    When unceccessful, leaves log files.
+
+  Args:
+    directory: directory where user's files locate
+  """
+
+  compile_dir = tempfile.mkdtemp()
+  work_dir = os.path.join(compile_dir, "working")
+  logging.info("Compiling at %s", work_dir)
+
+  try:
+    # Preparing the temporary directory content
+    shutil.copytree(directory, work_dir)
+    static_file_dir = os.path.join(
+      os.path.dirname(
+        os.path.realpath(__file__)),
+      "../../../../share/freemindlatex/static_files")
+    for filename in os.listdir(static_file_dir):
+      shutil.copyfile(
+        os.path.join(
+          static_file_dir, filename), os.path.join(
+            work_dir, filename))
+
+    # Compile
+    _CompileInWorkingDirectory(work_dir)
+
+    shutil.copyfile(
+      os.path.join(
+        work_dir, "slides.pdf"), os.path.join(
+          directory, "slides.pdf"))
+    return True
+
+  except LatexCompilationError as e:
+    latex_log_file = os.path.join(
+      directory, gflags.FLAGS.latex_error_log_filename)
+    with open(latex_log_file, 'w') as ofile:
+      ofile.write(str(e))
+    return False
+
+  finally:
+    shutil.rmtree(compile_dir)
 
 
 def _GetMTime(filename):
@@ -188,7 +225,6 @@ def RunEditingEnvironment(directory):
   CompileDir(directory)
   viewer_proc = _LaunchViewerProcess(os.path.join(directory, 'slides.pdf'))
 
-  # TODO(xuehuichao): install freemind's 1.0.0 version during the first run.
   freemind_sh_path = os.path.join(
     os.path.dirname(
       os.path.realpath(__file__)),
@@ -207,14 +243,7 @@ def RunEditingEnvironment(directory):
       new_mtime_list = _GetMTimeListForDir(directory)
       if new_mtime_list != mtime_list:
         mtime_list = new_mtime_list
-        try:
-          logging.info("re-compiling...")
-          CompileDir(directory)
-        except LatexCompilationError as e:
-          logging.error("Error during latex compilation. Dumped errors into log file "
-                        "%s.", gflags.FLAGS.latex_error_log_file)
-          with open(gflags.FLAGS.latex_error_log_file, "w") as logfile:
-            logfile.write(str(e))
+        CompileDir(directory)
 
   except KeyboardInterrupt as e:
     logging.info("User exiting with ctrl-c.")

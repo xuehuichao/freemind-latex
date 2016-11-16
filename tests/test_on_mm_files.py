@@ -23,7 +23,9 @@ class TestBasicUsecase(unittest.TestCase):
   def testCompilingInitialDirectory(self):
     """In a new directory, we will prepare an empty content to start with."""
     __main__.InitDir(self._test_dir)
-    __main__.CompileDir(self._test_dir)
+    self.assertTrue(
+      __main__.CompileDir(
+        self._test_dir))  # Compilation successful
 
     slides_file_loc = os.path.join(self._test_dir, "slides.pdf")
     self.assertTrue(os.path.exists(slides_file_loc))
@@ -37,9 +39,13 @@ class TestBasicUsecase(unittest.TestCase):
     __main__.InitDir(self._test_dir)
     shutil.copy("tests/data/additional_dollar.mm",
                 os.path.join(self._test_dir, "mindmap.mm"))
-    self.assertRaises(__main__.LatexCompilationError, __main__.CompileDir,
-                      self._test_dir)
-
+    self.assertFalse(__main__.CompileDir(self._test_dir))
+    self.assertIn(
+      "Missing $ inserted",
+      open(
+        os.path.join(
+          self._test_dir,
+          "latex.log")).read())
 
   @timeout_decorator.timeout(5)
   def testDoesNotLingerOnFourLayersOfNestedEnums(self):
@@ -47,8 +53,13 @@ class TestBasicUsecase(unittest.TestCase):
     __main__.InitDir(self._test_dir)
     shutil.copy("tests/data/multi_layered_enums.mm",
                 os.path.join(self._test_dir, "mindmap.mm"))
-    self.assertRaises(__main__.LatexCompilationError, __main__.CompileDir,
-                      self._test_dir)
+    self.assertFalse(__main__.CompileDir(self._test_dir))
+    self.assertIn(
+      "Too deeply nested",
+      open(
+        os.path.join(
+          self._test_dir,
+          "latex.log")).read())
 
 
 if __name__ == "__main__":

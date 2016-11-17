@@ -40,9 +40,7 @@ You'll need to first install latex, python and evince
 Install Latex and most of the packages. For example, in Ubuntu, that would be
 ```sh
 sudo apt-get install texlive-full python evince
-git clone https://github.com/xuehuichao/freemind-latex.git
-cd freemind-latex
-pip install . --user
+pip install freemind-latex
 ```
 
 ### MacOS
@@ -54,8 +52,5 @@ You'll need to install
 
 Then
 ```sh
-sudo easy_install pip
-git clone https://github.com/xuehuichao/freemind-latex.git
-cd freemind-latex
-pip install . --user
+pip install freemind-latex
 ```

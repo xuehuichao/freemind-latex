@@ -55,6 +55,23 @@ class TestHandlingErrors(BaseTest):
     self.assertIn("Author", pdf_file.getPage(0).extractText())
     self.assertIn("Second Slide", pdf_file.getPage(2).extractText())
 
+
+class TestHandlingErrors(BaseTest):
+
+  def _AssertErrorOnSecondPage(self, error_msg):
+    slides_file_loc = os.path.join(self._test_dir, "slides.pdf")
+    self.assertTrue(os.path.exists(slides_file_loc))
+    pdf_file = PyPDF2.PdfFileReader(open(slides_file_loc, "rb"))
+
+    self.assertEquals(4, pdf_file.getNumPages())
+
+    # Error message should appear on the 2nd page
+    self.asertIn(error_msg, pdf_file.getPage(0).extractText())
+
+    # Other pages should remain intact
+    self.assertIn("Author", pdf_file.getPage(0).extractText())
+    self.assertIn("Second Slide", pdf_file.getPage(2).extractText())
+
   @timeout_decorator.timeout(5)
   def testOnMissingDollarSign(self):
     """Missing dollar sign causes Latex to error."""

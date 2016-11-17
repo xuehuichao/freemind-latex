@@ -91,6 +91,23 @@ def _CompileBibtexAtDir(working_dir, filename_prefix="slides"):
     raise BibtexCompilationError(stdout)
 
 
+def _ParseNodeAndErrorMessageMapping(
+    latex_content, latex_compilation_error_msg):
+  """Parse the latex compilation error message, to see which frames have errors.
+
+  Args:
+    latex_content: the mindmap.tex file content, including frames' node markers.
+      We use it to extract mappings between line numbers and frames
+    latex_compilation_error_msg: the latex compilation error message, containing
+      line numbers and error messages.
+
+  Returns:
+    A map of frame IDs and the compilation errors within it. For example:
+    { "node12345" : ["nested too deep"] }
+  """
+  pass
+
+
 def _CompileInWorkingDirectory(work_dir):
   """Compiles files in a working dir (temporary).
 
@@ -110,9 +127,19 @@ def _CompileInWorkingDirectory(work_dir):
         "mindmap.mm"),
       'r',
       'utf8').read())
-  org.OutputToBeamerLatex(os.path.join(work_dir, "mindmap.tex"))
+  output_tex_file_loc = os.path.join(work_dir, "mindmap.tex")
+  org.OutputToBeamerLatex(output_tex_file_loc)
 
-  _CompileLatexAtDir(work_dir, "slides.tex")
+  try:
+    _CompileLatexAtDir(work_dir, "slides.tex")
+  except LatexCompilationError as e:
+    frame_and_error_message_map = _ParseNodeAndErrorMessageMapping(
+      open(output_tex_file_loc).read(), str(e))
+    org.LabelErrorsOnFrames(node_and_error_message_map)
+    org.OutputToBeamerLatex(output_tex_file_loc)
+    _CompileLatexAtDir(work_dir, "slides.tex")
+    raise
+
   try:
     _CompileBibtexAtDir(work_dir, "slides")
   except BibtexCompilationError as e:

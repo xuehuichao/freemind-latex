@@ -392,6 +392,18 @@ class Organization(object):
     self.LabelAllIntoLayers(node)
     node.SetPrintingFunc(DirectlyPrintSub(node))
 
+  def LabelErrorsOnFrames(self, node_error_mapping):
+    """Label frames in the graph to output error messages instead.
+
+    It will label the frame in a way to print its contents as they are,
+    with the error message on the title.
+
+    Args:
+      node_error_mapping: mappings between frames' corresponding
+        node IDs and the error they produce.
+    """
+    pass
+
   def OutputToHTML(self, filename):
     with codecs.open(filename, 'w', 'utf8') as outputfile:
       print >> outputfile, """
@@ -745,6 +757,21 @@ def DirectlyPrintSub(current_node):
       writer.write('\n')
 
   return PrintTo
+
+
+def OutputFrameAndDebugMessage(current_node, error_message):
+  """Output the error message as title, and normal content as content.
+
+  This printer is used when there is an error on this page.
+
+  Args:
+    current_node: the current node (a frame).
+    error_message: the latex compilation message for errors in this frame.
+
+  Returns:
+    A printer for printing the latex code into a writer.
+  """
+  pass
 
 
 def DirectlyPrintThisAndSub(current_node):

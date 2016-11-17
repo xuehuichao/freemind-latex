@@ -86,6 +86,8 @@ class TestHandlingErrors(BaseTest):
           self._test_dir,
           "latex.log")).read())
 
+    self._AssertErrorOnSecondPage("Missing $ inserted")
+
   @timeout_decorator.timeout(5)
   def testOnFourLayersOfNestedEnums(self):
     """Latex does not support multi-layered enums.

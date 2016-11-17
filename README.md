@@ -33,7 +33,7 @@ This tool converts a freemind document into PDF slides. With this tool, you may 
 
 The tool runs on Linux and MacOS, with Python.
 ## Installation
-You'll need to first install latex, python and evince
+You'll need to first install LaTeX, python, [[https://pypi.python.org/pypi/pip][pip]], and a PDF viewer.
 
 ### Linux
 

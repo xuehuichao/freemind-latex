@@ -29,14 +29,6 @@ gflags.DEFINE_string("latex_error_log_filename", "latex.log",
                      "Log file for latex compilation errors.")
 
 
-class LatexCompilationError(Exception):
-  pass
-
-
-class UnrecoverableLatexCompilationError(Exception):
-  pass
-
-
 class BibtexCompilationError(Exception):
   pass
 
@@ -61,22 +53,46 @@ def InitDir(directory):
       directory, "mindmap.mm"))
 
 
-def _CompileLatexAtDir(working_dir, filename):
+class LatexCompilationResult(object):
+
+  def __init__(self):
+    self.status = ""            # "SUCESS" or "ERROR" or "EMBEDDED" or "CANNOTFIX"
+    self.source_code = ""       # The source code of the first attempt
+    self.compilation_log = ""   # The compilation log of the first attempt
+    self.pdf_content = ""       # The pdf file content
+
+
+def _CompileLatexAtDir(working_dir, filename,
+                       content_tex_filename="mindmap.tex"):
   """Runs pdflatex at the working directory.
 
   Args:
     working_dir: the working directory of the freemindlatex project, e.g. /tmp/123
-    filename: the generated .tex file by parsing the .mm file.
+    filename: the main .tex file by parsing the .mm file.
+    content_tex_filename: the filename of .tex file containing the main content
 
-  Raises:
-    LatexCompilationError: when the pdflatex command come back with error messages.
+  Returns:
+    An LatexCompilationResult, whose status is either "SUCCESS" or "ERROR"
   """
   proc = subprocess.Popen(
     ["pdflatex", "-interaction=nonstopmode",
      filename], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, stderr = proc.communicate()
-  if proc.returncode != 0:
-    raise LatexCompilationError(stdout)
+  return_code = proc.returncode
+
+  result = LatexCompilationResult()
+  result.compilation_log = stdout
+  result.source_code = open(
+    os.path.join(
+      working_dir,
+      content_tex_filename)).read()
+  result.status = (return_code == 0) and "SUCCESS" or "ERROR"
+  if return_code == 0:
+    result.pdf_content = open(
+      os.path.join(working_dir, "{}.pdf".format(
+        os.path.splitext(filename)[0]))).read()
+
+  return result
 
 
 def _CompileBibtexAtDir(working_dir, filename_prefix="slides"):
@@ -97,7 +113,7 @@ def _CompileBibtexAtDir(working_dir, filename_prefix="slides"):
     raise BibtexCompilationError(stdout)
 
 
-def _ParseNodeAndErrorMessageMapping(
+def _ParseNodeIdAndErrorMessageMapping(
     latex_content, latex_compilation_error_msg):
   """Parse the latex compilation error message, to see which frames have errors.
 
@@ -140,18 +156,48 @@ def _ParseNodeAndErrorMessageMapping(
   return result
 
 
+def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
+  """Try compiling for the first time. If fails, try to embed the error message into frame.
+
+  Args:
+    org: the in-memory slides organization
+    work_dir: Directory containing the running files: mindmap.mm, and the image files.
+
+  Returns:
+    A LatexCompilationResult object.
+  """
+  output_tex_file_loc = os.path.join(work_dir, "mindmap.tex")
+  org.OutputToBeamerLatex(output_tex_file_loc)
+
+  # First attempt
+  result = _CompileLatexAtDir(work_dir, "slides.tex")
+
+  if result.status == "SUCCESS":
+    return result
+
+  # Second attempt
+  frame_and_error_message_map = _ParseNodeIdAndErrorMessageMapping(
+    result.source_code, result.compilation_log)
+  org.LabelErrorsOnFrames(frame_and_error_message_map)
+  org.OutputToBeamerLatex(output_tex_file_loc)
+
+  second_attempt_result = _CompileLatexAtDir(work_dir, "slides.tex")
+  if second_attempt_result.status == "SUCCESS":
+    result.status = "EMBEDDED"
+
+  else:
+    result.status = "CANNOTFIX"
+  return result
+
+
 def _CompileInWorkingDirectory(work_dir):
-  """Compiles files in a working dir (temporary).
+  """Compiles files in a working dir (temporary) to produce the final PDF.
 
   Args:
     work_dir: Directory containing the running files: mindmap.mm, and the image files.
 
-  Returns: Nothing.
-
-  Raises:
-    LatexCompilationError: when error running latex
-    UnrecoverableLatexCompilationError: when the retry for latex even fails
-    BibtexCompilationError: when error running bibtex
+  Returns:
+    A LatexCompilationResult with the final pdf content.
   """
   org = convert.Organization(
     codecs.open(
@@ -160,28 +206,22 @@ def _CompileInWorkingDirectory(work_dir):
         "mindmap.mm"),
       'r',
       'utf8').read())
-  output_tex_file_loc = os.path.join(work_dir, "mindmap.tex")
-  org.OutputToBeamerLatex(output_tex_file_loc)
 
-  try:
-    _CompileLatexAtDir(work_dir, "slides.tex")
-  except LatexCompilationError as e:
-    frame_and_error_message_map = _ParseNodeAndErrorMessageMapping(
-      open(output_tex_file_loc).read(), str(e))
-    org.LabelErrorsOnFrames(frame_and_error_message_map)
-    org.OutputToBeamerLatex(output_tex_file_loc)
-    try:
-      _CompileLatexAtDir(work_dir, "slides.tex")
-    except LatexCompilationError as new_exception:
-      raise UnrecoverableLatexCompilationError(new_exception)
-    raise
+  initial_compilation_result = _LatexCompileOrTryEmbedErrorMessage(
+    org, work_dir)
+  if initial_compilation_result.status == "CANNOTFIX":
+    return initial_compilation_result
 
   try:
     _CompileBibtexAtDir(work_dir, "slides")
   except BibtexCompilationError as e:
     pass
   _CompileLatexAtDir(work_dir, "slides.tex")
-  _CompileLatexAtDir(work_dir, "slides.tex")
+  final_compilation_result = _CompileLatexAtDir(work_dir, "slides.tex")
+
+  result = initial_compilation_result
+  result.pdf_content = final_compilation_result.pdf_content
+  return result
 
 
 def CompileDir(directory):
@@ -202,48 +242,33 @@ def CompileDir(directory):
   work_dir = os.path.join(compile_dir, "working")
   logging.info("Compiling at %s", work_dir)
   target_pdf_loc = os.path.join(directory, "slides.pdf")
-  try:
-    # Preparing the temporary directory content
-    shutil.copytree(directory, work_dir)
-    static_file_dir = os.path.join(
-      os.path.dirname(
-        os.path.realpath(__file__)),
-      "../../../../share/freemindlatex/static_files")
-    for filename in os.listdir(static_file_dir):
-      shutil.copyfile(
-        os.path.join(
-          static_file_dir, filename), os.path.join(
-            work_dir, filename))
 
-    # Compile
-    _CompileInWorkingDirectory(work_dir)
-
+  # Preparing the temporary directory content
+  shutil.copytree(directory, work_dir)
+  static_file_dir = os.path.join(
+    os.path.dirname(
+      os.path.realpath(__file__)),
+    "../../../../share/freemindlatex/static_files")
+  for filename in os.listdir(static_file_dir):
     shutil.copyfile(
-      os.path.join(work_dir, "slides.pdf"), target_pdf_loc)
+      os.path.join(
+        static_file_dir, filename), os.path.join(
+          work_dir, filename))
 
-    return True
+  # Compile
+  result = _CompileInWorkingDirectory(work_dir)
+  if result.pdf_content:
+    open(target_pdf_loc, 'w').write(result.pdf_content)
 
-  except LatexCompilationError as e:
-    shutil.copyfile(
-      os.path.join(work_dir, "slides.pdf"), target_pdf_loc)
+  if result.status != "SUCCESS":
     latex_log_file = os.path.join(
       directory, gflags.FLAGS.latex_error_log_filename)
     with open(latex_log_file, 'w') as ofile:
-      ofile.write(str(e))
-    return False
+      ofile.write(result.compilation_log)
 
-  except UnrecoverableLatexCompilationError as e:
-    logging.error(
-      "Found errors that were not recoverable. "
-      "Please check the syntax of your mindmap thoroughly:\n%s", e)
-    latex_log_file = os.path.join(
-      directory, gflags.FLAGS.latex_error_log_filename)
-    with open(latex_log_file, 'w') as ofile:
-      ofile.write(str(e))
-    return False
+  shutil.rmtree(compile_dir)
 
-  finally:
-    shutil.rmtree(compile_dir)
+  return result.status == "SUCCESS"
 
 
 def _GetMTime(filename):

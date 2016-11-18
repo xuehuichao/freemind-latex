@@ -89,6 +89,12 @@ class Node(object):
   def __init__(self, dom_node, level=0):
     self.type = dom_node.nodeName
     self.level = level
+
+    try:
+      self.nodeid = dom_node.attributes['ID'].value
+    except:
+      self.nodeid = "NONE"
+
     try:
       self.text = dom_node.attributes['TEXT'].value
     except:
@@ -343,6 +349,22 @@ class Organization(object):
   def SaveFromDom(self, dom):
     return Node(dom.childNodes[0])
 
+  def _TraverseAllDescendents(self, node=None):
+    """An iterator to yield all the descendents in a DFS manner
+
+    Args:
+      node: the current node. When it is none, will start from the root.
+
+    Returns:
+      An iterator of all descendents, including itself.
+    """
+    if node is None:
+      node = self.doc
+    yield node
+    for child in node.children:
+      for grand_kid in self._TraverseAllDescendents(child):
+        yield grand_kid
+
   def LabelAllIntoLayers(self, node):
     formatting_node = node.GetTheFormattingChildNode()
     if formatting_node is not None:
@@ -402,7 +424,11 @@ class Organization(object):
       node_error_mapping: mappings between frames' corresponding
         node IDs and the error they produce.
     """
-    pass
+    for node in self._TraverseAllDescendents():
+      if node.nodeid in node_error_mapping:
+        node.SetPrintingFunc(
+          OutputFrameAndDebugMessage(
+            node, node_error_mapping[node.nodeid]))
 
   def OutputToHTML(self, filename):
     with codecs.open(filename, 'w', 'utf8') as outputfile:
@@ -702,6 +728,7 @@ def OutputParagraph(current_node):
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
+    writer.write("\n%%frame: {}%%\n".format(current_node.nodeid))
     writer.write(r'\begin{frame}{')
     current_node.PrintSelfToWriter(writer, 'beamer_latex')
     writer.write(r'}')
@@ -759,19 +786,37 @@ def DirectlyPrintSub(current_node):
   return PrintTo
 
 
-def OutputFrameAndDebugMessage(current_node, error_message):
+def OutputFrameAndDebugMessage(current_node, error_messages):
   """Output the error message as title, and normal content as content.
 
   This printer is used when there is an error on this page.
 
   Args:
     current_node: the current node (a frame).
-    error_message: the latex compilation message for errors in this frame.
+    error_messages: a list of latex compilation messages for errors in this frame.
 
   Returns:
     A printer for printing the latex code into a writer.
   """
-  pass
+
+  def PrintTo(writer, format='beamer_latex'):
+    if format == 'beamer_latex':
+      PrintInBeamerLatexFormat(writer)
+    else:
+      logging.fatal("Unsupported format %s", format)
+
+  def PrintInBeamerLatexFormat(writer):
+    writer.write(r'\begin{frame}[fragile]{Error on page\ldots}')
+    writer.write(r'\begin{verbatim}')
+    writer.write('\n')
+    for msg in error_messages:
+      writer.write(msg)
+      writer.write("\n")
+    writer.write(r'\end{verbatim}')
+    writer.write('\n')
+    writer.write(r'\end{frame}')
+
+  return PrintTo
 
 
 def DirectlyPrintThisAndSub(current_node):

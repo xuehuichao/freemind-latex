@@ -13,6 +13,8 @@ import subprocess
 import sys
 import time
 import codecs
+import collections
+import re
 import os
 import shutil
 import tempfile
@@ -28,6 +30,10 @@ gflags.DEFINE_string("latex_error_log_filename", "latex.log",
 
 
 class LatexCompilationError(Exception):
+  pass
+
+
+class UnrecoverableLatexCompilationError(Exception):
   pass
 
 
@@ -105,7 +111,33 @@ def _ParseNodeAndErrorMessageMapping(
     A map of frame IDs and the compilation errors within it. For example:
     { "node12345" : ["nested too deep"] }
   """
-  pass
+  result = collections.defaultdict(list)
+
+  lineno_frameid_map = {}
+
+  frame_node_id = None
+  for line_no, line in enumerate(latex_content.split("\n")):
+    line_no = line_no + 1
+    if line.startswith("%%frame: "):
+      frame_node_id = re.match(r'%%frame: (.*)%%', line).group(1)
+
+    if frame_node_id is not None:
+      lineno_frameid_map[line_no] = frame_node_id
+
+  lineno_and_errors = []
+  error_message = None
+  for line in latex_compilation_error_msg.split("\n"):
+    if line.startswith("! "):
+      error_message = line[2:]
+    mo = re.match(r'l.(\d+)', line)
+    if mo is not None:
+      lineno_and_errors.append((int(mo.group(1)), error_message))
+
+  for lineno, error in lineno_and_errors:
+    frame_id = lineno_frameid_map[lineno]
+    result[frame_id].append(error)
+
+  return result
 
 
 def _CompileInWorkingDirectory(work_dir):
@@ -118,6 +150,7 @@ def _CompileInWorkingDirectory(work_dir):
 
   Raises:
     LatexCompilationError: when error running latex
+    UnrecoverableLatexCompilationError: when the retry for latex even fails
     BibtexCompilationError: when error running bibtex
   """
   org = convert.Organization(
@@ -135,9 +168,12 @@ def _CompileInWorkingDirectory(work_dir):
   except LatexCompilationError as e:
     frame_and_error_message_map = _ParseNodeAndErrorMessageMapping(
       open(output_tex_file_loc).read(), str(e))
-    org.LabelErrorsOnFrames(node_and_error_message_map)
+    org.LabelErrorsOnFrames(frame_and_error_message_map)
     org.OutputToBeamerLatex(output_tex_file_loc)
-    _CompileLatexAtDir(work_dir, "slides.tex")
+    try:
+      _CompileLatexAtDir(work_dir, "slides.tex")
+    except LatexCompilationError as new_exception:
+      raise UnrecoverableLatexCompilationError(new_exception)
     raise
 
   try:
@@ -165,7 +201,7 @@ def CompileDir(directory):
   compile_dir = tempfile.mkdtemp()
   work_dir = os.path.join(compile_dir, "working")
   logging.info("Compiling at %s", work_dir)
-
+  target_pdf_loc = os.path.join(directory, "slides.pdf")
   try:
     # Preparing the temporary directory content
     shutil.copytree(directory, work_dir)
@@ -183,12 +219,23 @@ def CompileDir(directory):
     _CompileInWorkingDirectory(work_dir)
 
     shutil.copyfile(
-      os.path.join(
-        work_dir, "slides.pdf"), os.path.join(
-          directory, "slides.pdf"))
+      os.path.join(work_dir, "slides.pdf"), target_pdf_loc)
+
     return True
 
   except LatexCompilationError as e:
+    shutil.copyfile(
+      os.path.join(work_dir, "slides.pdf"), target_pdf_loc)
+    latex_log_file = os.path.join(
+      directory, gflags.FLAGS.latex_error_log_filename)
+    with open(latex_log_file, 'w') as ofile:
+      ofile.write(str(e))
+    return False
+
+  except UnrecoverableLatexCompilationError as e:
+    logging.error(
+      "Found errors that were not recoverable. "
+      "Please check the syntax of your mindmap thoroughly:\n%s", e)
     latex_log_file = os.path.join(
       directory, gflags.FLAGS.latex_error_log_filename)
     with open(latex_log_file, 'w') as ofile:

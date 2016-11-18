@@ -54,3 +54,12 @@ Then
 ```sh
 pip install freemind-latex
 ```
+
+
+## Testing
+
+```sh
+virtualenv testenv
+source testenv/bin/activate
+pip install --upgrade . && python -m pytest tests/
+```

@@ -66,11 +66,16 @@ class TestHandlingErrors(BaseTest):
     self.assertEquals(4, pdf_file.getNumPages())
 
     # Error message should appear on the 2nd page
-    self.asertIn(error_msg, pdf_file.getPage(0).extractText())
+    # Note that the extracted text don't have spaces, so I have to trim the
+    # spaces
+    self.assertIn(
+      "".join(
+        error_msg.split()),
+      pdf_file.getPage(1).extractText())
 
     # Other pages should remain intact
     self.assertIn("Author", pdf_file.getPage(0).extractText())
-    self.assertIn("Second Slide", pdf_file.getPage(2).extractText())
+    self.assertIn("Secondslide", pdf_file.getPage(2).extractText())
 
   @timeout_decorator.timeout(5)
   def testOnMissingDollarSign(self):
@@ -78,6 +83,7 @@ class TestHandlingErrors(BaseTest):
     __main__.InitDir(self._test_dir)
     shutil.copy("tests/data/additional_dollar.mm",
                 os.path.join(self._test_dir, "mindmap.mm"))
+
     self.assertFalse(__main__.CompileDir(self._test_dir))
     self.assertIn(
       "Missing $ inserted",

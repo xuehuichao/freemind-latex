@@ -55,11 +55,21 @@ Then
 pip install freemind-latex
 ```
 
+## For development
 
-## Testing
+### Testing
 
 ```sh
 virtualenv testenv
 source testenv/bin/activate
 pip install --upgrade . && python -m pytest tests/
+```
+
+### Release
+
+```sh
+python setup.py sdist
+python setup.py bdist_wheel
+python setup.py bdist_wheel --universal
+twine upload dist/*
 ```

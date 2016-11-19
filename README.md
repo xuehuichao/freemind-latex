@@ -1,8 +1,10 @@
 [![Build Status](https://travis-ci.org/xuehuichao/freemind-latex.svg?branch=master)](https://travis-ci.org/xuehuichao/freemind-latex)
 
 
-# Write Slides with Mindmaps
-This tool converts freemind documents into LaTex Beamer.
+# Focus on Ideas, and Slides will Follow
+This tool converts a freemind document into LaTex Beamer, and compiles it.
+
+![Focus on your idea, and slides will be generated automatically.](demo.gif)
 
 ### Usage
 Go to an empty directory and start editing it
@@ -13,26 +15,23 @@ freemindlatex
 
 It will bring up freemind for editing, evince for slides preview, and keep monitoring the file changes. While you edit the mindmap, slides content will refresh.
 
-## Why Freemind?
+## Why not just PowerPoint?
 
-When writing docs/presentations, you'll often found yourself:
+Writing slides is hard -- you have to get the logics and details to work at the same time.
 
-* Strayed away from the outline you planned in the beginning.
-* Need to move paragraphs/sentences between different sections.
-* Missed the point. Or forgot what points you wanted to make in a paragraph/section
+* While you are tweaking the fonts, are you sure the high-level logic already makes sense? 
+* Want to move text between slides? Congrats, please re-tweak the fonts again.
 
-Freemind is better than traditional editors:
+With freemindlatex, we ask you to just focus on the logic.
 
-* Keep outline in-sync with low-level sentences.
-* Moving sentences/paragraphs just by dragging -- don't need to select, then copy, then move, then paste.
-* Write the point you want to make explicitly, upfront.
+* You see the outline and content in one page, in freemind.
+* We format everything automatically for you, in the most professional template -- LaTeX beamer.
+* Plus -- you get LaTex math equations for free.
 
-## What does freemind-latex do?
+The slides will follow.
 
-This tool converts a freemind document into PDF slides. With this tool, you may focus on writing the high-level logic. We take care of formatting it into pretty latex PDFs.
-
-The tool runs on Linux and MacOS, with Python.
 ## Installation
+The tool runs on Linux and MacOS, with Python.
 You'll need to first install LaTeX, python, [pip](https://pypi.python.org/pypi/pip), and a PDF viewer.
 
 ### Linux

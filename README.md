@@ -2,7 +2,7 @@
 
 
 # Focus on Ideas, and Slides will Follow
-This tool converts a freemind document into LaTex Beamer, and compiles it.
+This tool converts a mindmap into slides (via LaTeX beamer).
 
 ![Focus on your idea, and slides will be generated automatically.](demo.gif)
 

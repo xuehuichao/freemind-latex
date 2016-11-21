@@ -39,7 +39,7 @@ You'll need to first install LaTeX, python, [pip](https://pypi.python.org/pypi/p
 Install Latex and most of the packages. For example, in Ubuntu, that would be
 ```sh
 sudo apt-get install texlive-full python evince
-pip install freemind-latex
+pip install freemindlatex
 ```
 
 ### MacOS

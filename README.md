@@ -2,7 +2,7 @@
 
 
 # Focus on Ideas, and Slides will Follow
-This tool converts a mindmap into PDF slides (via LaTeX beamer).
+This tool converts a mindmap into PDF slides (via LaTeX beamer). You can write [complex yet fine-tuned slides](http://www.xuehuichao.com/thesis_slides.pdf) with this tool.
 
 ![Focus on your idea, and slides will be generated automatically.](demo.gif)
 

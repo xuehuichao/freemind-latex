@@ -51,7 +51,7 @@ You'll need to install
 
 Then
 ```sh
-pip install freemind-latex
+pip install freemindlatex
 ```
 
 ## For development

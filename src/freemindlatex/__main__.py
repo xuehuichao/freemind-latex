@@ -295,11 +295,12 @@ def _GetMTimeListForDir(directory, suffixes=['.mm', '.png', '.jpg']):
   return sorted(mtime_list)
 
 
-def _LaunchViewerProcess(filename):
+def _LaunchViewerProcess(filename, log_file):
   """Launch the viewer application under the current platform
 
   Args:
     filename: the filename of the pdf file to view
+    log_file: an already open, writable file object to write logs in.
   Returns:
     The subprocess of the viewer
   """
@@ -309,7 +310,8 @@ def _LaunchViewerProcess(filename):
   elif platform.system() == "Linux":
     launch_base_command = ["evince"]
 
-  return subprocess.Popen(launch_base_command + [filename])
+  return subprocess.Popen(launch_base_command +
+                          [filename], stdout=log_file, stderr=log_file)
 
 
 def RunEditingEnvironment(directory):
@@ -322,16 +324,25 @@ def RunEditingEnvironment(directory):
     InitDir(directory)
 
   CompileDir(directory)
-  viewer_proc = _LaunchViewerProcess(os.path.join(directory, 'slides.pdf'))
+  freemind_log_path = os.path.join(directory, 'freemind.log')
+  freemind_log_file = open(freemind_log_path, 'w')
+
+  viewer_log_path = os.path.join(directory, 'viewer.log')
+  viewer_log_file = open(viewer_log_path, 'w')
+
+  viewer_proc = _LaunchViewerProcess(
+    os.path.join(
+      directory,
+      'slides.pdf'),
+    viewer_log_file)
 
   freemind_sh_path = os.path.join(
     os.path.dirname(
       os.path.realpath(__file__)),
     "../../../../share/freemindlatex/freemind/freemind.sh")
-  freemind_log_path = os.path.join(directory, 'freemind.log')
-  freemind_log_file = open(freemind_log_path, 'w')
   freemind_proc = subprocess.Popen(
-    ['sh', freemind_sh_path, mindmap_file_loc], stdout=freemind_log_file, stderr=freemind_log_file)
+    ['sh', freemind_sh_path, mindmap_file_loc],
+    stdout=freemind_log_file, stderr=freemind_log_file)
   mtime_list = _GetMTimeListForDir(directory)
   try:
     while True:

@@ -8,8 +8,10 @@ before_install:
 
 install:
   - pip install .
+  - pip install pylint
   - pip list
 
 # command to run tests
 script:
+  - find . -name \*.py | xargs pylint --rcfile=.pylintrc
   - pytest

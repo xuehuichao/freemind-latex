@@ -1,12 +1,11 @@
-import gflags
-import sys
-import logging
-from xml.dom import minidom
-import os
-from os import path
-import re
 import codecs
+import logging
+import os
+import re
+import sys
+from xml.dom import minidom
 
+import gflags
 from bibtexparser.bparser import BibTexParser
 
 gflags.DEFINE_string('mindmap_file', None, 'the mindmap filename')
@@ -43,7 +42,8 @@ class BibDatabase(object):
       BibDatabase.db = BibDatabase()
     return BibDatabase.db
 
-  def GetFormattedAuthor(self, bib_authorname):
+  @staticmethod
+  def GetFormattedAuthor(bib_authorname):
     names = bib_authorname.split(' and ')
     first_author_lastname = names[0].split(',')[0]
     if len(names) == 1:
@@ -58,7 +58,7 @@ class BibDatabase(object):
   def GetOneArtCiteHTML(self, name):
     try:
       ent = self._RetrieveEntry(name)
-    except:
+    except KeyError as _:
       return "InvalidBibEntry:%s" % name
     return "<span class=\"citation\" title=\"%s\">%s, %s</span>" % (
       ent["title"],
@@ -68,7 +68,7 @@ class BibDatabase(object):
   def GetOneArtNewciteHTML(self, name):
     try:
       ent = self._RetrieveEntry(name)
-    except:
+    except KeyError as _:
       return "InvalidBibEntry:%s" % name
     return "<span class=\"citation\" title=\"%s\">%s (%s)</span>" % (
       ent["title"],
@@ -92,12 +92,12 @@ class Node(object):
 
     try:
       self.nodeid = dom_node.attributes['ID'].value
-    except:
+    except KeyError as _:
       self.nodeid = "NONE"
 
     try:
       self.text = dom_node.attributes['TEXT'].value
-    except:
+    except KeyError as _:
       self.text = "NONE"
 
     self.printing_func = None
@@ -129,7 +129,7 @@ class Node(object):
   def __str__(self):
     pass
 
-  def GetText(self, format='html'):
+  def GetText(self, print_format='html'):
     def ReplaceCitations(s):
       def get_cite_html(mo):
         citation = BibDatabase.GetTheDB().GetCiteHTML(mo.group(1))
@@ -224,9 +224,9 @@ class Node(object):
                ]
 
     txt = self.text
-    if format == 'beamer_latex':
-      format = 'latex'
-    if format == 'latex':
+    if print_format == 'beamer_latex':
+      print_format = 'latex'
+    if print_format == 'latex':
       if '<TABLE' in txt or '<table' in txt:
         return "TABLE"
       return txt
@@ -234,7 +234,7 @@ class Node(object):
       txt = f(txt)
     return txt
 
-  def PrintSelfToWriter(self, writer, format='html'):
+  def PrintSelfToWriter(self, writer, print_format='html'):
     if self.level == 0:
       return
 
@@ -250,7 +250,7 @@ class Node(object):
     return [child for child in self.GetChildren() if child.IsPrintable()]
 
   def HasPrinter(self):
-    return (self.printing_func is not None)
+    return self.printing_func is not None
 
   def GetPrinter(self):
     assert self.printing_func is not None
@@ -261,7 +261,8 @@ class Node(object):
 
   def IsFormattingNode(self):
     return (self.GetText() in ['SECTIONS', 'SUBSECTIONS', 'SUBSUBSECTIONS',
-                               'LIST', 'ULIST', 'HLIST']) or self.GetText().startswith('WIDTH=')
+                               'LIST', 'ULIST', 'HLIST']) or (
+                                 self.GetText().startswith('WIDTH='))
 
   def GetTheFormattingChildNode(self):
     for child in self.GetChildren():
@@ -279,11 +280,11 @@ class Node(object):
     return self.GetText().startswith('Story:')
 
   def IsPrintable(self):
-    return (not self.IsFormattingNode())
+    return not self.IsFormattingNode()
 
   def IsGraphNodeDescription(self):
     cld = self.GetPrintableChildren()
-    return ((len(cld) == 1) and (cld[0].IsImageNode()))
+    return (len(cld) == 1) and (cld[0].IsImageNode())
 
   def IsHelperNode(self):
     return self.IsStoryNode() or self.IsCommentNode()
@@ -301,8 +302,9 @@ class Node(object):
 
   def QualifyAsParagraph(self):
     cld = self.GetPrintableChildren()
-    return not self.IsLeafNode() and all(child.IsLeafNode()
-                                         for child in cld) and not self.IsGraphNodeDescription()
+    return (not self.IsLeafNode()
+            and all(child.IsLeafNode() for child in cld)
+            and not self.IsGraphNodeDescription())
 
 
 class ImageNode(Node):
@@ -312,8 +314,8 @@ class ImageNode(Node):
     rel_loc = dom_node.getElementsByTagName("img")[0].attributes['src'].value
     loc = rel_loc
     if gflags.FLAGS.use_absolute_paths_for_images:
-      loc = path.abspath(path.join(
-        path.dirname(gflags.FLAGS.mindmap_file), rel_loc))
+      loc = os.path.abspath(os.path.join(
+        os.path.dirname(gflags.FLAGS.mindmap_file), rel_loc))
     self.img = loc
 
   def IsImageNode(self):
@@ -346,7 +348,8 @@ class Organization(object):
     self.doc = self.SaveFromDom(dom)
     self.LabelTree(self.doc)
 
-  def SaveFromDom(self, dom):
+  @staticmethod
+  def SaveFromDom(dom):
     return Node(dom.childNodes[0])
 
   def _TraverseAllDescendents(self, node=None):
@@ -483,12 +486,12 @@ function ToggleComments() {
 
 
 def OutputOrderedList(current_node):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
@@ -529,12 +532,12 @@ def OutputOrderedList(current_node):
 
 
 def OutputUnorderedList(current_node):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
@@ -575,12 +578,12 @@ def OutputUnorderedList(current_node):
 
 
 def OutputHAlignedList(current_node):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
@@ -628,12 +631,12 @@ def OutputHAlignedList(current_node):
 
 
 def OutputStory(current_node):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
@@ -652,12 +655,12 @@ def OutputStory(current_node):
 
 
 def OutputImage(current_node, width=None):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer, current_node, width)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer, current_node, width)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer, current_node, width)
 
   def PrintInBeamerLatexFormat(writer, current_node, width):
@@ -694,12 +697,12 @@ def OutputImage(current_node, width=None):
 
 
 def OutputComment(current_node):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
@@ -719,12 +722,12 @@ def OutputComment(current_node):
 
 
 def OutputParagraph(current_node):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
@@ -760,12 +763,12 @@ def OutputParagraph(current_node):
 
 
 def DirectlyPrintSub(current_node):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
@@ -793,14 +796,15 @@ def OutputFrameAndDebugMessage(current_node, error_messages):
 
   Args:
     current_node: the current node (a frame).
-    error_messages: a list of latex compilation messages for errors in this frame.
+    error_messages: a list of latex compilation messages for errors in this
+      frame.
 
   Returns:
     A printer for printing the latex code into a writer.
   """
 
-  def PrintTo(writer, format='beamer_latex'):
-    if format == 'beamer_latex':
+  def PrintTo(writer, print_format='beamer_latex'):
+    if print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
     else:
       logging.fatal("Unsupported format %s", format)
@@ -820,16 +824,16 @@ def OutputFrameAndDebugMessage(current_node, error_messages):
 
 
 def DirectlyPrintThisAndSub(current_node):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
-    writer.write(current_node.GetText(format='beamer_latex'))
+    writer.write(current_node.GetText(print_format='beamer_latex'))
     writer.write('\n')
     for t in current_node.GetPrintableChildren():
       t.GetPrinter()(writer, 'beamer_latex')
@@ -843,7 +847,7 @@ def DirectlyPrintThisAndSub(current_node):
       writer.write('<br>')
 
   def PrintInLatexFormat(writer):
-    writer.write(current_node.GetText(format='latex'))
+    writer.write(current_node.GetText(print_format='latex'))
     writer.write('\n')
     for t in current_node.GetPrintableChildren():
       t.GetPrinter()(writer, 'latex')
@@ -853,12 +857,12 @@ def DirectlyPrintThisAndSub(current_node):
 
 
 def PrintCurrentAsSection(current_node, tag):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
@@ -902,12 +906,12 @@ def PrintCurrentAsSection(current_node, tag):
 
 
 def PrintTopLevel(current_node):
-  def PrintTo(writer, format='html'):
-    if format == 'html':
+  def PrintTo(writer, print_format='html'):
+    if print_format == 'html':
       PrintInHTMLFormat(writer)
-    elif format == 'latex':
+    elif print_format == 'latex':
       PrintInLatexFormat(writer)
-    elif format == 'beamer_latex':
+    elif print_format == 'beamer_latex':
       PrintInBeamerLatexFormat(writer)
 
   def PrintInBeamerLatexFormat(writer):
@@ -931,13 +935,13 @@ def PrintTopLevel(current_node):
     \end{frame}
     """ % (title, subtitle, author, author))
 
-    DirectlyPrintSub(current_node)(writer, format='beamer_latex')
+    DirectlyPrintSub(current_node)(writer, print_format='beamer_latex')
 
   def PrintInLatexFormat(writer):
     writer.write(r"\chapter{")
     writer.write(current_node.GetText())
     writer.write("}\n")
-    DirectlyPrintSub(current_node)(writer, format='latex')
+    DirectlyPrintSub(current_node)(writer, print_format='latex')
 
   def PrintInHTMLFormat(writer):
     writer.write("<center><h1>")
@@ -949,7 +953,7 @@ def PrintTopLevel(current_node):
 
 def main():
   try:
-    argv = gflags.FLAGS(sys.argv)
+    gflags.FLAGS(sys.argv)
   except gflags.FlagsError as e:
     print '%s\nUsage: %s ARGS\n%s' % (e, sys.argv[0], gflags.FLAGS)
     sys.exit(1)

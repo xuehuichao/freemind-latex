@@ -1,14 +1,15 @@
 """Using the script on existing mm files"""
 
-import os
-import subprocess
-import unittest
 import logging
+import os
 import shutil
+import subprocess
 import tempfile
-import PyPDF2
 import time
+import unittest
+
 import portpicker
+import PyPDF2
 import timeout_decorator
 from freemindlatex import __main__
 
@@ -47,8 +48,9 @@ class TestBasicUsecase(ClientSideTestFixture):
   def testCompilingInitialDirectory(self):
     """In a new directory, we will prepare an empty content to start with."""
     __main__.InitDir(self._test_dir)
+    # Compilation successful
     self.assertTrue(
-      self._compilation_client.CompileDir(self._test_dir))  # Compilation successful
+      self._compilation_client.CompileDir(self._test_dir))
 
     slides_file_loc = os.path.join(self._test_dir, "slides.pdf")
     self.assertTrue(os.path.exists(slides_file_loc))

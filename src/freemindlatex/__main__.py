@@ -9,26 +9,25 @@ Basic usage:
   recompile the freemind file into slides upon your modifications.
 
 Advanced usages:
-  freemindlatex --port 8000 server # Start the latex compilation server at a selected port
-  freemindlatex --using_server localhost:8000 client # Compiles documents with a remote server.
+  freemindlatex --port 8000 server # Start the latex compilation server at a
+    selected port
+  freemindlatex --using_server localhost:8000 client # Compiles documents
+    with a remote server.
 """
 
+import logging
+import os
+import platform
+import shutil
 import subprocess
 import sys
 import time
-import codecs
-import collections
-import re
-import os
-import shutil
-import tempfile
+
 import gflags
-import logging
-import platform
 import portpicker
-from freemindlatex import convert
-from freemindlatex import compilation_service
 from freemindlatex import compilation_server
+from freemindlatex import compilation_service
+
 from google.apputils import app
 
 gflags.DEFINE_string(
@@ -77,11 +76,12 @@ class LatexCompilationClient(compilation_service.LatexCompilationStub):
     compilation_service.LatexCompilationStub.__init__(self, server_address)
 
   def CompileDir(self, directory):
-    """Compiles the files in user's directory, and copy the resulting pdf file back.
+    """Compiles the files in user's directory, and update the pdf file.
 
-    The function will prepare the directory content, send it over for compilation.
-    When there is a latex compilation error, we will put the latex error log
-    at latex.log (or anything else specified by latex_error_log_filename).
+    The function will prepare the directory content, send it over for
+    compilation. When there is a latex compilation error, we will put
+    the latex error log at latex.log (or anything else specified by
+    latex_error_log_filename).
 
     Returns: boolean indicating if the compilation was successful.
       When unceccessful, leaves log files.
@@ -115,8 +115,7 @@ def _GetMTime(filename):
   """
   try:
     return os.path.getmtime(filename)
-  except Exception as e:
-    print e
+  except OSError as _:          # file does not exist.
     return None
 
 
@@ -130,7 +129,7 @@ def _GetMTimeListForDir(directory):
     '.%s' %
     i for i in gflags.FLAGS.watched_file_extensions.split(',')]
   mtime_list = []
-  for dirpath, dirnames, filenames in os.walk(directory):
+  for dirpath, _, filenames in os.walk(directory):
     for filename in [f for f in filenames if any(
         f.endswith(suf) for suf in suffixes)]:
       filepath = os.path.join(dirpath, filename)
@@ -166,7 +165,8 @@ def RunEditingEnvironment(directory, server_address):
 
   Args:
     directory: the directory user is editing at
-    server_address: address of latex compilation server, e.g. http://127.0.0.1:8000
+    server_address: address of latex compilation server,
+      e.g. http://127.0.0.1:8000
   """
   mindmap_file_loc = os.path.join(directory, 'mindmap.mm')
   if not os.path.exists(mindmap_file_loc):
@@ -208,10 +208,10 @@ def RunEditingEnvironment(directory, server_address):
         mtime_list = new_mtime_list
         latex_client.CompileDir(directory)
 
-  except KeyboardInterrupt as e:
+  except KeyboardInterrupt as _:
     logging.info("User exiting with ctrl-c.")
 
-  except UserExitedEditingEnvironment as e:
+  except UserExitedEditingEnvironment as _:
     logging.info("Exiting because one editing window has been closed.")
 
   finally:
@@ -232,6 +232,8 @@ def main(argv):
     level=logging.INFO,
     format='%(levelname)s: %(threadName)s %(message)s')
 
+  directory = os.getcwd()
+
   if argv[1:] == ['server']:
     port = gflags.FLAGS.port or portpicker.pick_unused_port()
     compilation_server.RunServerAtPort(port)
@@ -246,7 +248,8 @@ def main(argv):
   elif argv[1:] == []:
     port = gflags.FLAGS.port or portpicker.pick_unused_port()
     server_proc = subprocess.Popen(
-      [os.path.realpath(sys.modules[__name__].__file__), "--port", str(port), "server"])
+      [os.path.realpath(sys.modules[__name__].__file__),
+       "--port", str(port), "server"])
     try:
       RunEditingEnvironment(
         directory,

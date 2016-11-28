@@ -3,34 +3,52 @@
 import os
 import subprocess
 import unittest
+import logging
 import shutil
 import tempfile
 import PyPDF2
+import time
+import portpicker
 import timeout_decorator
 from freemindlatex import __main__
 
 
-class BaseTest(unittest.TestCase):
-  """Base test that setups the directory for testing at self._test_dir
+class ClientSideTestFixture(unittest.TestCase):
+  """Base test that setups the testing directory and server.
   """
 
   def setUp(self):
     self._test_dir = tempfile.mkdtemp()
     self.assertIsNotNone(self._test_dir)
+    self._server_port = portpicker.pick_unused_port()
+    self._compilation_server_proc = subprocess.Popen(
+      ["freemindlatex", "--port", str(self._server_port), "server"])
+    self._server_address = "127.0.0.1:{}".format(self._server_port)
+    # TODO(xuehuichao): move this compilation client to its own module
+    self._compilation_client = __main__.LatexCompilationClient(
+      self._server_address)
+
+    retries = 0
+    while not self._compilation_client.CheckHealthy() and retries < 5:
+      retries += 1
+      logging.info("Compilation server not healthy yet (%d's retry)", retries)
+      time.sleep(1)
+
+    self.assertTrue(self._compilation_client.CheckHealthy())
 
   def tearDown(self):
     shutil.rmtree(self._test_dir)
+    self._compilation_server_proc.kill()
 
 
-class TestBasicUsecase(BaseTest):
+class TestBasicUsecase(ClientSideTestFixture):
   """Our program compiles in working directories."""
 
   def testCompilingInitialDirectory(self):
     """In a new directory, we will prepare an empty content to start with."""
     __main__.InitDir(self._test_dir)
     self.assertTrue(
-      __main__.CompileDir(
-        self._test_dir))  # Compilation successful
+      self._compilation_client.CompileDir(self._test_dir))  # Compilation successful
 
     slides_file_loc = os.path.join(self._test_dir, "slides.pdf")
     self.assertTrue(os.path.exists(slides_file_loc))
@@ -39,24 +57,7 @@ class TestBasicUsecase(BaseTest):
     self.assertIn("Author", pdf_file.getPage(0).extractText())
 
 
-class TestHandlingErrors(BaseTest):
-
-  def _AssertErrorOnSecondPage(self, error_msg):
-    slides_file_loc = os.path.join(self._test_dir, "slides.pdf")
-    self.assertTrue(os.path.exists(slides_file_loc))
-    pdf_file = PyPDF2.PdfFileReader(open(slides_file_loc, "rb"))
-
-    self.assertEquals(4, pdf_file.getNumPages())
-
-    # Error message should appear on the 2nd page
-    self.asertIn(error_msg, pdf_file.getPage(0).extractText())
-
-    # Other pages should remain intact
-    self.assertIn("Author", pdf_file.getPage(0).extractText())
-    self.assertIn("Second Slide", pdf_file.getPage(2).extractText())
-
-
-class TestHandlingErrors(BaseTest):
+class TestHandlingErrors(ClientSideTestFixture):
 
   def _AssertErrorOnSecondPage(self, error_msg):
     slides_file_loc = os.path.join(self._test_dir, "slides.pdf")
@@ -83,8 +84,9 @@ class TestHandlingErrors(BaseTest):
     __main__.InitDir(self._test_dir)
     shutil.copy("tests/data/additional_dollar.mm",
                 os.path.join(self._test_dir, "mindmap.mm"))
+    print os.path.join(self._test_dir, "mindmap.mm")
 
-    self.assertFalse(__main__.CompileDir(self._test_dir))
+    self.assertFalse(self._compilation_client.CompileDir(self._test_dir))
     self.assertIn(
       "Missing $ inserted",
       open(
@@ -101,7 +103,7 @@ class TestHandlingErrors(BaseTest):
     __main__.InitDir(self._test_dir)
     shutil.copy("tests/data/multi_layered_enums.mm",
                 os.path.join(self._test_dir, "mindmap.mm"))
-    self.assertFalse(__main__.CompileDir(self._test_dir))
+    self.assertFalse(self._compilation_client.CompileDir(self._test_dir))
     self.assertIn(
       "Too deeply nested",
       open(

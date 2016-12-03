@@ -1,17 +1,19 @@
+from concurrent import futures
+
 import codecs
 import collections
 import errno
 import logging
 import os
+import grpc
 import re
 import shutil
 import subprocess
 import tempfile
+import time
 
-from freemindlatex import compilation_service, convert
-from jsonrpc import JSONRPCResponseManager, dispatcher
-from werkzeug.serving import run_simple
-from werkzeug.wrappers import Request, Response
+from freemindlatex import convert
+from freemindlatex import compilation_service_pb2
 
 
 def _MkdirP(directory):
@@ -47,8 +49,8 @@ def _CompileLatexAtDir(working_dir, filename,
     content_tex_filename: the filename of .tex file containing the main content
 
   Returns:
-    An compilation_service.LatexCompilationResponse, whose status is either
-      "SUCCESS" or "ERROR"
+    A compilation_service_pb2.LatexCompilationResponse, whose status is either
+    compilation_service_pb2.LatexCompilationResponse.SUCCESS or compilation_service_pb2.LatexCompilationResponse.ERROR
   """
   proc = subprocess.Popen(
     ["pdflatex", "-interaction=nonstopmode",
@@ -56,13 +58,14 @@ def _CompileLatexAtDir(working_dir, filename,
   stdout, _ = proc.communicate()
   return_code = proc.returncode
 
-  result = compilation_service.LatexCompilationResponse()
+  result = compilation_service_pb2.LatexCompilationResponse()
   result.compilation_log = stdout
   result.source_code = open(
     os.path.join(
       working_dir,
       content_tex_filename)).read()
-  result.status = (return_code == 0) and "SUCCESS" or "ERROR"
+  result.status = (
+    return_code == 0) and compilation_service_pb2.LatexCompilationResponse.SUCCESS or compilation_service_pb2.LatexCompilationResponse.ERROR
   if return_code == 0:
     result.pdf_content = open(
       os.path.join(working_dir, "{}.pdf".format(
@@ -145,7 +148,7 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
       and the image files.
 
   Returns:
-    A compilation_service.LatexCompilationResponse object.
+    A compilation_service_pb2.LatexCompilationResponse object.
   """
   output_tex_file_loc = os.path.join(work_dir, "mindmap.tex")
   org.OutputToBeamerLatex(output_tex_file_loc)
@@ -153,7 +156,7 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   # First attempt
   result = _CompileLatexAtDir(work_dir, "slides.tex")
 
-  if result.status == "SUCCESS":
+  if result.status == compilation_service_pb2.LatexCompilationResponse.SUCCESS:
     return result
 
   # Second attempt
@@ -163,11 +166,11 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   org.OutputToBeamerLatex(output_tex_file_loc)
 
   second_attempt_result = _CompileLatexAtDir(work_dir, "slides.tex")
-  if second_attempt_result.status == "SUCCESS":
-    result.status = "EMBEDDED"
+  if second_attempt_result.status == compilation_service_pb2.LatexCompilationResponse.SUCCESS:
+    result.status = compilation_service_pb2.LatexCompilationResponse.EMBEDDED
 
   else:
-    result.status = "CANNOTFIX"
+    result.status = compilation_service_pb2.LatexCompilationResponse.CANNOTFIX
   return result
 
 
@@ -183,7 +186,7 @@ def _CompileInWorkingDirectory(work_dir):
       image files.
 
   Returns:
-    A compilation_service.LatexCompilationResponse with the final pdf content.
+    A compilation_service_pb2.LatexCompilationResponse with the final pdf content.
   """
   org = convert.Organization(
     codecs.open(
@@ -195,7 +198,7 @@ def _CompileInWorkingDirectory(work_dir):
 
   initial_compilation_result = _LatexCompileOrTryEmbedErrorMessage(
     org, work_dir)
-  if initial_compilation_result.status == "CANNOTFIX":
+  if initial_compilation_result.status == compilation_service_pb2.LatexCompilationResponse.CANNOTFIX:
     return initial_compilation_result
 
   try:
@@ -210,7 +213,6 @@ def _CompileInWorkingDirectory(work_dir):
   return result
 
 
-@dispatcher.add_method
 def CompileMindmapPackage(latex_compilation_request):
   """Compile the mindmap along with the files attached in the request.
 
@@ -219,11 +221,11 @@ def CompileMindmapPackage(latex_compilation_request):
   the response.
 
   Returns:
-    A compilation_service.LatexCompilationResponse object.
+    A compilation_service_pb2.LatexCompilationResponse object.
 
   Args:
     # TODO(xuehuchao): revise this, as it is not true.
-    A compilation_service.LatexCompilationRequest object, containing all the
+    A compilation_service_pb2.LatexCompilationRequest object, containing all the
     involved file content.
   """
 
@@ -256,37 +258,41 @@ def CompileMindmapPackage(latex_compilation_request):
   # Clean-up
   shutil.rmtree(compile_dir)
 
-  json_result = {"status": result.status,
-                 "source_code": unicode(result.source_code, "utf8"),
-                 "compilation_log": unicode(result.compilation_log, "utf8"),
-                 "pdf_content": repr(result.pdf_content)}
-
-  return json_result
+  return result
 
 
-@dispatcher.add_method
-def Healthz():
-  return "ok"
+class CompilationServer(compilation_service_pb2.LatexCompilationServicer):
+
+  def CompilePackage(self, request, context):
+    file_info_map = dict()
+    for file_info in request.file_infos:
+      file_info_map[file_info.filepath] = file_info.content
+
+    return CompileMindmapPackage(file_info_map)
 
 
-@Request.application
-def application(request):
-  # Dispatcher is dictionary {<method_name>: callable}
-  response = JSONRPCResponseManager.handle(
-    request.data, dispatcher)
-  rv = Response(response.json, mimetype='application/json')
+class HealthzServer(compilation_service_pb2.HealthServicer):
 
-  rv.headers.add('Access-Control-Allow-Origin', '*')
-  rv.headers.add('Access-Control-Allow-Methods',
-                 'GET,PUT,POST,DELETE,PATCH')
-  rv.headers.add('Access-Control-Allow-Headers',
-                 'Content-Type, Authorization')
-
-  return rv
+  def Check(self, request, context):
+    response = compilation_service_pb2.HealthCheckResponse()
+    response.status = compilation_service_pb2.HealthCheckResponse.SERVING
+    return response
 
 
 def RunServerAtPort(port):
   """Run the latex compilation server at port, and wait till termination.
   """
   logging.info("Running the LaTeX compilation server at port %d", port)
-  run_simple('0.0.0.0', port, application, use_debugger=True)
+
+  server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+  compilation_service_pb2.add_LatexCompilationServicer_to_server(
+    CompilationServer(), server)
+  compilation_service_pb2.add_HealthServicer_to_server(
+    HealthzServer(), server)
+  server.add_insecure_port('[::]:%d' % port)
+  server.start()
+  try:
+    while True:
+      time.sleep(60 * 60 * 24)
+  except KeyboardInterrupt:
+    server.stop(0)

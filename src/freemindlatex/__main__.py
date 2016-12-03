@@ -16,6 +16,7 @@ Advanced usages:
 """
 
 import logging
+import grpc
 import os
 import platform
 import shutil
@@ -26,7 +27,7 @@ import time
 import gflags
 import portpicker
 from freemindlatex import compilation_server
-from freemindlatex import compilation_service
+from freemindlatex import compilation_service_pb2
 
 from google.apputils import app
 
@@ -68,12 +69,23 @@ def InitDir(directory):
       directory, "mindmap.mm"))
 
 
-class LatexCompilationClient(compilation_service.LatexCompilationStub):
+class LatexCompilationClient(object):
   """Client-side of latex compilation.
   """
 
   def __init__(self, server_address):
-    compilation_service.LatexCompilationStub.__init__(self, server_address)
+    self._channel = grpc.insecure_channel(server_address)
+    self._healthz_stub = compilation_service_pb2.HealthStub(self._channel)
+    self._compilation_stub = compilation_service_pb2.LatexCompilationStub(
+      self._channel)
+
+  def CheckHealthy(self):
+    try:
+      response = self._healthz_stub.Check(compilation_service_pb2.HealthCheckRequest()
+                                          )
+    except:
+      return False
+    return response.status == compilation_service_pb2.HealthCheckResponse.SERVING
 
   def CompileDir(self, directory):
     """Compiles the files in user's directory, and update the pdf file.
@@ -92,22 +104,24 @@ class LatexCompilationClient(compilation_service.LatexCompilationStub):
 
     target_pdf_loc = os.path.join(directory, 'slides.pdf')
     filename_and_mtime_list = _GetMTimeListForDir(directory)
-    compilation_request = compilation_service.LatexCompilationRequest()
+    compilation_request = compilation_service_pb2.LatexCompilationRequest()
     for filename, _ in filename_and_mtime_list:
       with open(os.path.join(directory, filename)) as infile:
-        compilation_request.files_map[filename] = infile.read()
+        new_file_info = compilation_request.file_infos.add()
+        new_file_info.filepath = filename
+        new_file_info.content = infile.read()
 
-    response = self.Compile(compilation_request)
+    response = self._compilation_stub.CompilePackage(compilation_request)
     if response.pdf_content:
       open(target_pdf_loc, 'w').write(response.pdf_content)
 
-    if response.status != "SUCCESS":
+    if response.status != compilation_service_pb2.LatexCompilationResponse.SUCCESS:
       latex_log_file = os.path.join(
         directory, gflags.FLAGS.latex_error_log_filename)
       with open(latex_log_file, 'w') as ofile:
         ofile.write(response.compilation_log)
 
-    return response.status == "SUCCESS"
+    return response.status == compilation_service_pb2.LatexCompilationResponse.SUCCESS
 
 
 def _GetMTime(filename):

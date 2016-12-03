@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='compilation_service.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x19\x63ompilation_service.proto\"\x7f\n\x17LatexCompilationRequest\x12\x35\n\nfile_infos\x18\x01 \x03(\x0b\x32!.LatexCompilationRequest.FileInfo\x1a-\n\x08\x46ileInfo\x12\x10\n\x08\x66ilepath\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\x0c\"\xce\x01\n\x18LatexCompilationResponse\x12\x30\n\x06status\x18\x01 \x01(\x0e\x32 .LatexCompilationResponse.Status\x12\x13\n\x0bsource_code\x18\x02 \x01(\t\x12\x17\n\x0f\x63ompilation_log\x18\x03 \x01(\t\x12\x13\n\x0bpdf_content\x18\x04 \x01(\x0c\"=\n\x06Status\x12\x0b\n\x07SUCCESS\x10\x00\x12\t\n\x05\x45RROR\x10\x01\x12\x0c\n\x08\x45MBEDDED\x10\x02\x12\r\n\tCANNOTFIX\x10\x03\x32\x62\n\x17LatexCompilationService\x12G\n\x0e\x43ompilePackage\x12\x18.LatexCompilationRequest\x1a\x19.LatexCompilationResponse\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x19\x63ompilation_service.proto\"\x7f\n\x17LatexCompilationRequest\x12\x35\n\nfile_infos\x18\x01 \x03(\x0b\x32!.LatexCompilationRequest.FileInfo\x1a-\n\x08\x46ileInfo\x12\x10\n\x08\x66ilepath\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\x0c\"\xce\x01\n\x18LatexCompilationResponse\x12\x30\n\x06status\x18\x01 \x01(\x0e\x32 .LatexCompilationResponse.Status\x12\x13\n\x0bsource_code\x18\x02 \x01(\t\x12\x17\n\x0f\x63ompilation_log\x18\x03 \x01(\t\x12\x13\n\x0bpdf_content\x18\x04 \x01(\x0c\"=\n\x06Status\x12\t\n\x05\x45RROR\x10\x00\x12\x0b\n\x07SUCCESS\x10\x01\x12\x0c\n\x08\x45MBEDDED\x10\x02\x12\r\n\tCANNOTFIX\x10\x03\"%\n\x12HealthCheckRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\"\x85\x01\n\x13HealthCheckResponse\x12\x32\n\x06status\x18\x01 \x01(\x0e\x32\".HealthCheckResponse.ServingStatus\":\n\rServingStatus\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0b\n\x07SERVING\x10\x01\x12\x0f\n\x0bNOT_SERVING\x10\x02\x32[\n\x10LatexCompilation\x12G\n\x0e\x43ompilePackage\x12\x18.LatexCompilationRequest\x1a\x19.LatexCompilationResponse\"\x00\x32<\n\x06Health\x12\x32\n\x05\x43heck\x12\x13.HealthCheckRequest\x1a\x14.HealthCheckResponseb\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -32,11 +32,11 @@ _LATEXCOMPILATIONRESPONSE_STATUS = _descriptor.EnumDescriptor(
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='SUCCESS', index=0, number=0,
+      name='ERROR', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='ERROR', index=1, number=1,
+      name='SUCCESS', index=1, number=1,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
@@ -54,6 +54,32 @@ _LATEXCOMPILATIONRESPONSE_STATUS = _descriptor.EnumDescriptor(
   serialized_end=365,
 )
 _sym_db.RegisterEnumDescriptor(_LATEXCOMPILATIONRESPONSE_STATUS)
+
+_HEALTHCHECKRESPONSE_SERVINGSTATUS = _descriptor.EnumDescriptor(
+  name='ServingStatus',
+  full_name='HealthCheckResponse.ServingStatus',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='UNKNOWN', index=0, number=0,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='SERVING', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='NOT_SERVING', index=2, number=2,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=482,
+  serialized_end=540,
+)
+_sym_db.RegisterEnumDescriptor(_HEALTHCHECKRESPONSE_SERVINGSTATUS)
 
 
 _LATEXCOMPILATIONREQUEST_FILEINFO = _descriptor.Descriptor(
@@ -176,12 +202,79 @@ _LATEXCOMPILATIONRESPONSE = _descriptor.Descriptor(
   serialized_end=365,
 )
 
+
+_HEALTHCHECKREQUEST = _descriptor.Descriptor(
+  name='HealthCheckRequest',
+  full_name='HealthCheckRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='service', full_name='HealthCheckRequest.service', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=367,
+  serialized_end=404,
+)
+
+
+_HEALTHCHECKRESPONSE = _descriptor.Descriptor(
+  name='HealthCheckResponse',
+  full_name='HealthCheckResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='status', full_name='HealthCheckResponse.status', index=0,
+      number=1, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+    _HEALTHCHECKRESPONSE_SERVINGSTATUS,
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=407,
+  serialized_end=540,
+)
+
 _LATEXCOMPILATIONREQUEST_FILEINFO.containing_type = _LATEXCOMPILATIONREQUEST
 _LATEXCOMPILATIONREQUEST.fields_by_name['file_infos'].message_type = _LATEXCOMPILATIONREQUEST_FILEINFO
 _LATEXCOMPILATIONRESPONSE.fields_by_name['status'].enum_type = _LATEXCOMPILATIONRESPONSE_STATUS
 _LATEXCOMPILATIONRESPONSE_STATUS.containing_type = _LATEXCOMPILATIONRESPONSE
+_HEALTHCHECKRESPONSE.fields_by_name['status'].enum_type = _HEALTHCHECKRESPONSE_SERVINGSTATUS
+_HEALTHCHECKRESPONSE_SERVINGSTATUS.containing_type = _HEALTHCHECKRESPONSE
 DESCRIPTOR.message_types_by_name['LatexCompilationRequest'] = _LATEXCOMPILATIONREQUEST
 DESCRIPTOR.message_types_by_name['LatexCompilationResponse'] = _LATEXCOMPILATIONRESPONSE
+DESCRIPTOR.message_types_by_name['HealthCheckRequest'] = _HEALTHCHECKREQUEST
+DESCRIPTOR.message_types_by_name['HealthCheckResponse'] = _HEALTHCHECKRESPONSE
 
 LatexCompilationRequest = _reflection.GeneratedProtocolMessageType('LatexCompilationRequest', (_message.Message,), dict(
 
@@ -205,6 +298,20 @@ LatexCompilationResponse = _reflection.GeneratedProtocolMessageType('LatexCompil
   ))
 _sym_db.RegisterMessage(LatexCompilationResponse)
 
+HealthCheckRequest = _reflection.GeneratedProtocolMessageType('HealthCheckRequest', (_message.Message,), dict(
+  DESCRIPTOR = _HEALTHCHECKREQUEST,
+  __module__ = 'compilation_service_pb2'
+  # @@protoc_insertion_point(class_scope:HealthCheckRequest)
+  ))
+_sym_db.RegisterMessage(HealthCheckRequest)
+
+HealthCheckResponse = _reflection.GeneratedProtocolMessageType('HealthCheckResponse', (_message.Message,), dict(
+  DESCRIPTOR = _HEALTHCHECKRESPONSE,
+  __module__ = 'compilation_service_pb2'
+  # @@protoc_insertion_point(class_scope:HealthCheckResponse)
+  ))
+_sym_db.RegisterMessage(HealthCheckResponse)
+
 
 import grpc
 from grpc.beta import implementations as beta_implementations
@@ -213,7 +320,7 @@ from grpc.framework.common import cardinality
 from grpc.framework.interfaces.face import utilities as face_utilities
 
 
-class LatexCompilationServiceStub(object):
+class LatexCompilationStub(object):
 
   def __init__(self, channel):
     """Constructor.
@@ -222,13 +329,13 @@ class LatexCompilationServiceStub(object):
       channel: A grpc.Channel.
     """
     self.CompilePackage = channel.unary_unary(
-        '/LatexCompilationService/CompilePackage',
+        '/LatexCompilation/CompilePackage',
         request_serializer=LatexCompilationRequest.SerializeToString,
         response_deserializer=LatexCompilationResponse.FromString,
         )
 
 
-class LatexCompilationServiceServicer(object):
+class LatexCompilationServicer(object):
 
   def CompilePackage(self, request, context):
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -236,7 +343,7 @@ class LatexCompilationServiceServicer(object):
     raise NotImplementedError('Method not implemented!')
 
 
-def add_LatexCompilationServiceServicer_to_server(servicer, server):
+def add_LatexCompilationServicer_to_server(servicer, server):
   rpc_method_handlers = {
       'CompilePackage': grpc.unary_unary_rpc_method_handler(
           servicer.CompilePackage,
@@ -245,11 +352,11 @@ def add_LatexCompilationServiceServicer_to_server(servicer, server):
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
-      'LatexCompilationService', rpc_method_handlers)
+      'LatexCompilation', rpc_method_handlers)
   server.add_generic_rpc_handlers((generic_handler,))
 
 
-class BetaLatexCompilationServiceServicer(object):
+class BetaLatexCompilationServicer(object):
   """The Beta API is deprecated for 0.15.0 and later.
 
   It is recommended to use the GA API (classes and functions in this
@@ -259,7 +366,7 @@ class BetaLatexCompilationServiceServicer(object):
     context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
 
 
-class BetaLatexCompilationServiceStub(object):
+class BetaLatexCompilationStub(object):
   """The Beta API is deprecated for 0.15.0 and later.
 
   It is recommended to use the GA API (classes and functions in this
@@ -270,40 +377,135 @@ class BetaLatexCompilationServiceStub(object):
   CompilePackage.future = None
 
 
-def beta_create_LatexCompilationService_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
+def beta_create_LatexCompilation_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
   """The Beta API is deprecated for 0.15.0 and later.
 
   It is recommended to use the GA API (classes and functions in this
   file not marked beta) for all further purposes. This function was
   generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
   request_deserializers = {
-    ('LatexCompilationService', 'CompilePackage'): LatexCompilationRequest.FromString,
+    ('LatexCompilation', 'CompilePackage'): LatexCompilationRequest.FromString,
   }
   response_serializers = {
-    ('LatexCompilationService', 'CompilePackage'): LatexCompilationResponse.SerializeToString,
+    ('LatexCompilation', 'CompilePackage'): LatexCompilationResponse.SerializeToString,
   }
   method_implementations = {
-    ('LatexCompilationService', 'CompilePackage'): face_utilities.unary_unary_inline(servicer.CompilePackage),
+    ('LatexCompilation', 'CompilePackage'): face_utilities.unary_unary_inline(servicer.CompilePackage),
   }
   server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
   return beta_implementations.server(method_implementations, options=server_options)
 
 
-def beta_create_LatexCompilationService_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
+def beta_create_LatexCompilation_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
   """The Beta API is deprecated for 0.15.0 and later.
 
   It is recommended to use the GA API (classes and functions in this
   file not marked beta) for all further purposes. This function was
   generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
   request_serializers = {
-    ('LatexCompilationService', 'CompilePackage'): LatexCompilationRequest.SerializeToString,
+    ('LatexCompilation', 'CompilePackage'): LatexCompilationRequest.SerializeToString,
   }
   response_deserializers = {
-    ('LatexCompilationService', 'CompilePackage'): LatexCompilationResponse.FromString,
+    ('LatexCompilation', 'CompilePackage'): LatexCompilationResponse.FromString,
   }
   cardinalities = {
     'CompilePackage': cardinality.Cardinality.UNARY_UNARY,
   }
   stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
-  return beta_implementations.dynamic_stub(channel, 'LatexCompilationService', cardinalities, options=stub_options)
+  return beta_implementations.dynamic_stub(channel, 'LatexCompilation', cardinalities, options=stub_options)
+
+
+class HealthStub(object):
+
+  def __init__(self, channel):
+    """Constructor.
+
+    Args:
+      channel: A grpc.Channel.
+    """
+    self.Check = channel.unary_unary(
+        '/Health/Check',
+        request_serializer=HealthCheckRequest.SerializeToString,
+        response_deserializer=HealthCheckResponse.FromString,
+        )
+
+
+class HealthServicer(object):
+
+  def Check(self, request, context):
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+
+def add_HealthServicer_to_server(servicer, server):
+  rpc_method_handlers = {
+      'Check': grpc.unary_unary_rpc_method_handler(
+          servicer.Check,
+          request_deserializer=HealthCheckRequest.FromString,
+          response_serializer=HealthCheckResponse.SerializeToString,
+      ),
+  }
+  generic_handler = grpc.method_handlers_generic_handler(
+      'Health', rpc_method_handlers)
+  server.add_generic_rpc_handlers((generic_handler,))
+
+
+class BetaHealthServicer(object):
+  """The Beta API is deprecated for 0.15.0 and later.
+
+  It is recommended to use the GA API (classes and functions in this
+  file not marked beta) for all further purposes. This class was generated
+  only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
+  def Check(self, request, context):
+    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+
+
+class BetaHealthStub(object):
+  """The Beta API is deprecated for 0.15.0 and later.
+
+  It is recommended to use the GA API (classes and functions in this
+  file not marked beta) for all further purposes. This class was generated
+  only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
+  def Check(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+    raise NotImplementedError()
+  Check.future = None
+
+
+def beta_create_Health_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
+  """The Beta API is deprecated for 0.15.0 and later.
+
+  It is recommended to use the GA API (classes and functions in this
+  file not marked beta) for all further purposes. This function was
+  generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
+  request_deserializers = {
+    ('Health', 'Check'): HealthCheckRequest.FromString,
+  }
+  response_serializers = {
+    ('Health', 'Check'): HealthCheckResponse.SerializeToString,
+  }
+  method_implementations = {
+    ('Health', 'Check'): face_utilities.unary_unary_inline(servicer.Check),
+  }
+  server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
+  return beta_implementations.server(method_implementations, options=server_options)
+
+
+def beta_create_Health_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
+  """The Beta API is deprecated for 0.15.0 and later.
+
+  It is recommended to use the GA API (classes and functions in this
+  file not marked beta) for all further purposes. This function was
+  generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
+  request_serializers = {
+    ('Health', 'Check'): HealthCheckRequest.SerializeToString,
+  }
+  response_deserializers = {
+    ('Health', 'Check'): HealthCheckResponse.FromString,
+  }
+  cardinalities = {
+    'Check': cardinality.Cardinality.UNARY_UNARY,
+  }
+  stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
+  return beta_implementations.dynamic_stub(channel, 'Health', cardinalities, options=stub_options)
 # @@protoc_insertion_point(module_scope)

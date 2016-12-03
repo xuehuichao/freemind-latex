@@ -1,7 +1,8 @@
 import glob
 import os
 
-from setuptools import find_packages, setup
+from setuptools import find_packages
+from setuptools import setup
 
 freemind_dirlist = []
 for (path, dirs, filenames) in os.walk("freemind"):

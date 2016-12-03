@@ -5,6 +5,7 @@ pypdf2
 timeout-decorator
 portpicker
 google-apputils
-requests
-werkzeug
-json-rpc
+futures
+gevent
+protobuf
+grpcio

@@ -1,7 +1,9 @@
 """Client-side of the latex compilation service.
 """
 
+import logging
 import os
+import time
 
 import gflags
 import grpc
@@ -9,6 +11,10 @@ from freemindlatex import compilation_service_pb2
 
 gflags.DEFINE_string("watched_file_extensions", "mm,png,jpg",
                      "Files extensions to watch for LaTeX compilation.")
+gflags.DEFINE_integer(
+  "max_health_retries",
+  5,
+  "Number of health check retries before giving up.")
 
 
 def _GetMTime(filename):
@@ -100,3 +106,14 @@ class LatexCompilationClient(object):
 
     return (response.status ==
             compilation_service_pb2.LatexCompilationResponse.SUCCESS)
+
+
+def WaitTillHealthy(server_address):
+  """Wait until the server is healthy, with RPC calls.
+  """
+  client = LatexCompilationClient(server_address)
+  retries = 0
+  while not client.CheckHealthy() and retries < gflags.FLAGS.max_health_retries:
+    retries += 1
+    logging.info("Compilation server not healthy yet (%d's retry)", retries)
+    time.sleep(1)

@@ -173,12 +173,13 @@ def main(argv):
   elif argv[1:] == []:
     port = gflags.FLAGS.port or portpicker.pick_unused_port()
     server_proc = subprocess.Popen(
-      [os.path.realpath(sys.modules[__name__].__file__),
-       "--port", str(port), "server"])
+      ["python", argv[0], "--port", str(port), "server"])
+    server_address = '127.0.0.1:{}'.format(port)
+    compilation_client_lib.WaitTillHealthy(server_address)
     try:
       RunEditingEnvironment(
         directory,
-        server_address='127.0.0.1:{}'.format(port))
+        server_address=server_address)
     finally:
       try:
         logging.info("Terminating latex compilation server.")

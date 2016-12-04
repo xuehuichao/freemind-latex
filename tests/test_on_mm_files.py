@@ -1,48 +1,16 @@
 """Using the script on existing mm files"""
 
-import logging
 import os
 import shutil
-import subprocess
-import tempfile
-import time
-import unittest
 
-import portpicker
 import PyPDF2
 import timeout_decorator
+import integration_test_lib
 from freemindlatex import run_app
 
 
-class ClientSideTestFixture(unittest.TestCase):
-  """Base test that setups the testing directory and server.
-  """
-
-  def setUp(self):
-    self._test_dir = tempfile.mkdtemp()
-    self.assertIsNotNone(self._test_dir)
-    self._server_port = portpicker.pick_unused_port()
-    self._compilation_server_proc = subprocess.Popen(
-      ["freemindlatex", "--port", str(self._server_port), "server"])
-    self._server_address = "127.0.0.1:{}".format(self._server_port)
-    # TODO(xuehuichao): move this compilation client to its own module
-    self._compilation_client = run_app.LatexCompilationClient(
-      self._server_address)
-
-    retries = 0
-    while not self._compilation_client.CheckHealthy() and retries < 5:
-      retries += 1
-      logging.info("Compilation server not healthy yet (%d's retry)", retries)
-      time.sleep(1)
-
-    self.assertTrue(self._compilation_client.CheckHealthy())
-
-  def tearDown(self):
-    shutil.rmtree(self._test_dir)
-    self._compilation_server_proc.kill()
-
-
-class TestBasicUsecase(ClientSideTestFixture):
+class TestBasicUsecase(
+    integration_test_lib.ClientServerIntegrationTestFixture):
   """Our program compiles in working directories."""
 
   def testCompilingInitialDirectory(self):
@@ -59,7 +27,8 @@ class TestBasicUsecase(ClientSideTestFixture):
     self.assertIn("Author", pdf_file.getPage(0).extractText())
 
 
-class TestHandlingErrors(ClientSideTestFixture):
+class TestHandlingErrors(
+    integration_test_lib.ClientServerIntegrationTestFixture):
 
   def _AssertErrorOnSecondPage(self, error_msg):
     slides_file_loc = os.path.join(self._test_dir, "slides.pdf")

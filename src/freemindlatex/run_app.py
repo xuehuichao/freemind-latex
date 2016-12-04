@@ -26,7 +26,8 @@ import time
 
 import gflags
 import portpicker
-from freemindlatex import compilation_server
+from freemindlatex import compilation_server_lib
+from freemindlatex import compilation_client_lib
 from freemindlatex import compilation_service_pb2
 
 from google.apputils import app
@@ -40,8 +41,6 @@ gflags.DEFINE_integer("seconds_between_rechecking", 1,
                       "Time between checking if files have changed.")
 gflags.DEFINE_string("latex_error_log_filename", "latex.log",
                      "Log file for latex compilation errors.")
-gflags.DEFINE_string("watched_file_extensions", "mm,png,jpg",
-                     "Files extensions to watch for LaTeX compilation.")
 gflags.DEFINE_integer(
   "port",
   None,
@@ -67,92 +66,6 @@ def InitDir(directory):
     os.path.join(
       example_dir, "mindmap.mm"), os.path.join(
       directory, "mindmap.mm"))
-
-
-class LatexCompilationClient(object):
-  """Client-side of latex compilation.
-  """
-
-  def __init__(self, server_address):
-    self._channel = grpc.insecure_channel(server_address)
-    self._healthz_stub = compilation_service_pb2.HealthStub(self._channel)
-    self._compilation_stub = compilation_service_pb2.LatexCompilationStub(
-      self._channel)
-
-  def CheckHealthy(self):
-    try:
-      response = self._healthz_stub.Check(compilation_service_pb2.HealthCheckRequest()
-                                          )
-    except:
-      return False
-    return response.status == compilation_service_pb2.HealthCheckResponse.SERVING
-
-  def CompileDir(self, directory):
-    """Compiles the files in user's directory, and update the pdf file.
-
-    The function will prepare the directory content, send it over for
-    compilation. When there is a latex compilation error, we will put
-    the latex error log at latex.log (or anything else specified by
-    latex_error_log_filename).
-
-    Returns: boolean indicating if the compilation was successful.
-      When unceccessful, leaves log files.
-
-    Args:
-      directory: directory where user's files locate
-    """
-
-    target_pdf_loc = os.path.join(directory, 'slides.pdf')
-    filename_and_mtime_list = _GetMTimeListForDir(directory)
-    compilation_request = compilation_service_pb2.LatexCompilationRequest()
-    for filename, _ in filename_and_mtime_list:
-      with open(os.path.join(directory, filename)) as infile:
-        new_file_info = compilation_request.file_infos.add()
-        new_file_info.filepath = filename
-        new_file_info.content = infile.read()
-
-    response = self._compilation_stub.CompilePackage(compilation_request)
-    if response.pdf_content:
-      open(target_pdf_loc, 'w').write(response.pdf_content)
-
-    if response.status != compilation_service_pb2.LatexCompilationResponse.SUCCESS:
-      latex_log_file = os.path.join(
-        directory, gflags.FLAGS.latex_error_log_filename)
-      with open(latex_log_file, 'w') as ofile:
-        ofile.write(response.compilation_log)
-
-    return response.status == compilation_service_pb2.LatexCompilationResponse.SUCCESS
-
-
-def _GetMTime(filename):
-  """Get the time of the last modification.
-  """
-  try:
-    return os.path.getmtime(filename)
-  except OSError as _:          # file does not exist.
-    return None
-
-
-def _GetMTimeListForDir(directory):
-  """Getting the modification time for all user files in a directory.
-
-  Returns: a sorted list of pairs in form of ('file1', 1234567), where the paths
-    are relative paths
-  """
-  suffixes = [
-    '.%s' %
-    i for i in gflags.FLAGS.watched_file_extensions.split(',')]
-  mtime_list = []
-  for dirpath, _, filenames in os.walk(directory):
-    for filename in [f for f in filenames if any(
-        f.endswith(suf) for suf in suffixes)]:
-      filepath = os.path.join(dirpath, filename)
-      mtime_list.append(
-        (os.path.relpath(
-          filepath,
-          directory),
-          _GetMTime(filepath)))
-  return sorted(mtime_list)
 
 
 def _LaunchViewerProcess(filename, log_file):
@@ -187,7 +100,7 @@ def RunEditingEnvironment(directory, server_address):
     logging.info("Empty directory... Initializing it")
     InitDir(directory)
 
-  latex_client = LatexCompilationClient(server_address)
+  latex_client = compilation_client_lib.LatexCompilationClient(server_address)
 
   latex_client.CompileDir(directory)
   freemind_log_path = os.path.join(directory, 'freemind.log')
@@ -210,14 +123,14 @@ def RunEditingEnvironment(directory, server_address):
     ['sh', freemind_sh_path, mindmap_file_loc],
     stdout=freemind_log_file, stderr=freemind_log_file)
 
-  mtime_list = _GetMTimeListForDir(directory)
+  mtime_list = compilation_client_lib._GetMTimeListForDir(directory)
   try:
     while True:
       time.sleep(gflags.FLAGS.seconds_between_rechecking)
       if freemind_proc.poll() is not None or viewer_proc.poll() is not None:
         raise UserExitedEditingEnvironment
 
-      new_mtime_list = _GetMTimeListForDir(directory)
+      new_mtime_list = compilation_client_lib._GetMTimeListForDir(directory)
       if new_mtime_list != mtime_list:
         mtime_list = new_mtime_list
         latex_client.CompileDir(directory)
@@ -250,7 +163,7 @@ def main(argv):
 
   if argv[1:] == ['server']:
     port = gflags.FLAGS.port or portpicker.pick_unused_port()
-    compilation_server.RunServerAtPort(port)
+    compilation_server_lib.RunServerAtPort(port)
 
   elif argv[1:] == ['client']:
     if not gflags.FLAGS.using_server:

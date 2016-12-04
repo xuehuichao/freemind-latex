@@ -11,7 +11,7 @@ import unittest
 import portpicker
 import PyPDF2
 import timeout_decorator
-from freemindlatex import __main__
+from freemindlatex import run_app
 
 
 class ClientSideTestFixture(unittest.TestCase):
@@ -26,7 +26,7 @@ class ClientSideTestFixture(unittest.TestCase):
       ["freemindlatex", "--port", str(self._server_port), "server"])
     self._server_address = "127.0.0.1:{}".format(self._server_port)
     # TODO(xuehuichao): move this compilation client to its own module
-    self._compilation_client = __main__.LatexCompilationClient(
+    self._compilation_client = run_app.LatexCompilationClient(
       self._server_address)
 
     retries = 0
@@ -47,7 +47,7 @@ class TestBasicUsecase(ClientSideTestFixture):
 
   def testCompilingInitialDirectory(self):
     """In a new directory, we will prepare an empty content to start with."""
-    __main__.InitDir(self._test_dir)
+    run_app.InitDir(self._test_dir)
     # Compilation successful
     self.assertTrue(
       self._compilation_client.CompileDir(self._test_dir))
@@ -83,7 +83,7 @@ class TestHandlingErrors(ClientSideTestFixture):
   @timeout_decorator.timeout(5)
   def testOnMissingDollarSign(self):
     """Missing dollar sign causes Latex to error."""
-    __main__.InitDir(self._test_dir)
+    run_app.InitDir(self._test_dir)
     shutil.copy("tests/data/additional_dollar.mm",
                 os.path.join(self._test_dir, "mindmap.mm"))
     print os.path.join(self._test_dir, "mindmap.mm")
@@ -102,7 +102,7 @@ class TestHandlingErrors(ClientSideTestFixture):
   def testOnFourLayersOfNestedEnums(self):
     """Latex does not support multi-layered enums.
     """
-    __main__.InitDir(self._test_dir)
+    run_app.InitDir(self._test_dir)
     shutil.copy("tests/data/multi_layered_enums.mm",
                 os.path.join(self._test_dir, "mindmap.mm"))
     self.assertFalse(self._compilation_client.CompileDir(self._test_dir))

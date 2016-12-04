@@ -27,7 +27,7 @@ setup(
   zip_safe=True,
   include_package_data=True,
   entry_points={'console_scripts': [
-    "freemindlatex = freemindlatex.main_stub:main",
+    "freemindlatex = freemindlatex.__entry__:main",
   ]},
   data_files=[
     ("share/freemindlatex/static_files", glob.glob("static_files/*")),

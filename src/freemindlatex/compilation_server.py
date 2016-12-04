@@ -11,9 +11,14 @@ import shutil
 import subprocess
 import tempfile
 import time
+import gflags
 
 from freemindlatex import convert
 from freemindlatex import compilation_service_pb2
+
+
+_LATEX_MAIN_FILE_BASENAME = "slides"
+_LATEX_CONTENT_TEX_FILE_NAME = "mindmap.tex"
 
 
 def _MkdirP(directory):
@@ -38,15 +43,12 @@ def _MkdirP(directory):
       raise
 
 
-def _CompileLatexAtDir(working_dir, filename,
-                       content_tex_filename="mindmap.tex"):
+def _CompileLatexAtDir(working_dir):
   """Runs pdflatex at the working directory.
 
   Args:
-    working_dir: the working directory of the freemindlatex project,
-      e.g. /tmp/123
-    filename: the main .tex file by parsing the .mm file.
-    content_tex_filename: the filename of .tex file containing the main content
+    working_dir: the working directory of the freemindlatex compilation process.
+      Normally a temporary directory (e.g. /tmp/123).
 
   Returns:
     A compilation_service_pb2.LatexCompilationResponse, whose status is either
@@ -54,7 +56,7 @@ def _CompileLatexAtDir(working_dir, filename,
   """
   proc = subprocess.Popen(
     ["pdflatex", "-interaction=nonstopmode",
-     filename], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+     "{}.tex".format(_LATEX_MAIN_FILE_BASENAME)], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, _ = proc.communicate()
   return_code = proc.returncode
 
@@ -63,25 +65,27 @@ def _CompileLatexAtDir(working_dir, filename,
   result.source_code = open(
     os.path.join(
       working_dir,
-      content_tex_filename)).read()
+      _LATEX_CONTENT_TEX_FILE_NAME)).read()
   result.status = (
     return_code == 0) and compilation_service_pb2.LatexCompilationResponse.SUCCESS or compilation_service_pb2.LatexCompilationResponse.ERROR
   if return_code == 0:
     result.pdf_content = open(
       os.path.join(working_dir, "{}.pdf".format(
-        os.path.splitext(filename)[0]))).read()
+        _LATEX_MAIN_FILE_BASENAME))).read()
 
   return result
 
 
-def _CompileBibtexAtDir(working_dir, filename_prefix="slides"):
+class BibtexCompilationError(Exception):
+  pass
+
+
+def _CompileBibtexAtDir(working_dir):
   """Runs bibtex at the working directory.
 
   Args:
     working_dir: the working directory of the freemindlatex project,
       e.g. /tmp/123
-    filename_prefix: the prefix of the .tex, .aux file names of the final
-      generated .pdf file.
 
   Raises:
     BibtexCompilationError: when bibtex compilation encounters some errors
@@ -89,7 +93,7 @@ def _CompileBibtexAtDir(working_dir, filename_prefix="slides"):
   """
   proc = subprocess.Popen(
     ["bibtex",
-     filename_prefix], cwd=working_dir, stdout=subprocess.PIPE,
+     _LATEX_MAIN_FILE_BASENAME], cwd=working_dir, stdout=subprocess.PIPE,
     stderr=subprocess.PIPE)
   stdout, _ = proc.communicate()
   if proc.returncode != 0:
@@ -102,7 +106,7 @@ def _ParseNodeIdAndErrorMessageMapping(
 
   Args:
     latex_content: the mindmap.tex file content, including frames'
-    node markers. We use it to extract mappings between line numbers and frames
+      node markers. We use it to extract mappings between line numbers and frames
     latex_compilation_error_msg: the latex compilation error message, containing
       line numbers and error messages.
 
@@ -154,7 +158,7 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   org.OutputToBeamerLatex(output_tex_file_loc)
 
   # First attempt
-  result = _CompileLatexAtDir(work_dir, "slides.tex")
+  result = _CompileLatexAtDir(work_dir)
 
   if result.status == compilation_service_pb2.LatexCompilationResponse.SUCCESS:
     return result
@@ -165,17 +169,13 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   org.LabelErrorsOnFrames(frame_and_error_message_map)
   org.OutputToBeamerLatex(output_tex_file_loc)
 
-  second_attempt_result = _CompileLatexAtDir(work_dir, "slides.tex")
+  second_attempt_result = _CompileLatexAtDir(work_dir)
   if second_attempt_result.status == compilation_service_pb2.LatexCompilationResponse.SUCCESS:
     result.status = compilation_service_pb2.LatexCompilationResponse.EMBEDDED
 
   else:
     result.status = compilation_service_pb2.LatexCompilationResponse.CANNOTFIX
   return result
-
-
-class BibtexCompilationError(Exception):
-  pass
 
 
 def _CompileInWorkingDirectory(work_dir):
@@ -202,11 +202,11 @@ def _CompileInWorkingDirectory(work_dir):
     return initial_compilation_result
 
   try:
-    _CompileBibtexAtDir(work_dir, "slides")
+    _CompileBibtexAtDir(work_dir)
   except BibtexCompilationError as _:
     pass
-  _CompileLatexAtDir(work_dir, "slides.tex")
-  final_compilation_result = _CompileLatexAtDir(work_dir, "slides.tex")
+  _CompileLatexAtDir(work_dir)
+  final_compilation_result = _CompileLatexAtDir(work_dir)
 
   result = initial_compilation_result
   result.pdf_content = final_compilation_result.pdf_content

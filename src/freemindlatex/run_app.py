@@ -28,7 +28,7 @@ import portpicker
 from freemindlatex import compilation_client_lib
 from freemindlatex import compilation_server_lib
 
-from google.apputils import app
+from google.apputils import app  # pylint: disable=no-name-in-module
 
 gflags.DEFINE_string(
   "using_server",

@@ -129,7 +129,7 @@ class Node(object):
   def __str__(self):
     pass
 
-  def GetText(self, print_format='html'):
+  def GetText(self, print_format='html'):  # pylint: disable=too-many-locals
     def ReplaceCitations(s):
       def get_cite_html(mo):
         citation = BibDatabase.GetTheDB().GetCiteHTML(mo.group(1))
@@ -270,7 +270,7 @@ class Node(object):
         return child
     return None
 
-  def IsImageNode(self):
+  def IsImageNode(self):        # pylint: disable=no-self-use
     return False
 
   def IsCommentNode(self):

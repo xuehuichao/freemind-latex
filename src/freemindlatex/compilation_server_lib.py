@@ -180,6 +180,20 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   return result
 
 
+def _PrepareCompilationBaseDirectory(directory):
+  """Copies the template (slides.tex) into the empty directory.
+  """
+  static_file_dir = os.path.join(
+    os.path.dirname(
+      os.path.realpath(__file__)),
+    "../../../../share/freemindlatex/static_files")
+  for filename in os.listdir(static_file_dir):
+    shutil.copyfile(
+      os.path.join(
+        static_file_dir, filename), os.path.join(
+          directory, filename))
+
+
 class CompilationServer(compilation_service_pb2.LatexCompilationServicer):
 
   def CompilePackage(self, request, context):
@@ -202,22 +216,13 @@ class CompilationServer(compilation_service_pb2.LatexCompilationServicer):
     _MkdirP(work_dir)
 
     # Preparing the temporary directory content
+    _PrepareCompilationBaseDirectory(work_dir)
     for file_info in request.file_infos:
       target_loc = os.path.join(work_dir, file_info.filepath)
       dirname = os.path.dirname(target_loc)
       _MkdirP(dirname)
       with open(target_loc, 'w') as ofile:
         ofile.write(file_info.content)
-
-    static_file_dir = os.path.join(
-      os.path.dirname(
-        os.path.realpath(__file__)),
-      "../../../../share/freemindlatex/static_files")
-    for filename in os.listdir(static_file_dir):
-      shutil.copyfile(
-        os.path.join(
-          static_file_dir, filename), os.path.join(
-            work_dir, filename))
 
     # Compile
     org = convert.Organization(

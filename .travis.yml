@@ -14,4 +14,4 @@ install:
 # command to run tests
 script:
   - find . -name \*.py ! -name \*_pb2.py | xargs pylint --rcfile=.pylintrc
-  - pytest
+  - pytest tests

@@ -2,11 +2,13 @@
 
 import os
 import shutil
+import unittest
 
 import PyPDF2
 import timeout_decorator
-import integration_test_lib
 from freemindlatex import run_app
+
+import integration_test_lib
 
 
 class TestBasicUsecase(

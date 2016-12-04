@@ -2,8 +2,9 @@
 """
 
 import os
-import grpc
+
 import gflags
+import grpc
 from freemindlatex import compilation_service_pb2
 
 gflags.DEFINE_string("watched_file_extensions", "mm,png,jpg",
@@ -53,8 +54,8 @@ class LatexCompilationClient(object):
 
   def CheckHealthy(self):
     try:
-      response = self._healthz_stub.Check(compilation_service_pb2.HealthCheckRequest()
-                                          )
+      response = self._healthz_stub.Check(
+        compilation_service_pb2.HealthCheckRequest())
     except:
       return False
     return response.status == compilation_service_pb2.HealthCheckResponse.SERVING
@@ -87,10 +88,12 @@ class LatexCompilationClient(object):
     if response.pdf_content:
       open(target_pdf_loc, 'w').write(response.pdf_content)
 
-    if response.status != compilation_service_pb2.LatexCompilationResponse.SUCCESS:
+    if (response.status !=
+        compilation_service_pb2.LatexCompilationResponse.SUCCESS):
       latex_log_file = os.path.join(
         directory, gflags.FLAGS.latex_error_log_filename)
       with open(latex_log_file, 'w') as ofile:
         ofile.write(response.compilation_log)
 
-    return response.status == compilation_service_pb2.LatexCompilationResponse.SUCCESS
+    return (response.status ==
+            compilation_service_pb2.LatexCompilationResponse.SUCCESS)

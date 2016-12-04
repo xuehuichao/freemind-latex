@@ -1,21 +1,17 @@
-from concurrent import futures
-
 import codecs
 import collections
 import errno
 import logging
 import os
-import grpc
 import re
 import shutil
 import subprocess
 import tempfile
 import time
-import gflags
 
-from freemindlatex import convert
-from freemindlatex import compilation_service_pb2
-
+import grpc
+from concurrent import futures
+from freemindlatex import compilation_service_pb2, convert
 
 _LATEX_MAIN_FILE_BASENAME = "slides"
 _LATEX_CONTENT_TEX_FILE_NAME = "mindmap.tex"
@@ -52,11 +48,13 @@ def _CompileLatexAtDir(working_dir):
 
   Returns:
     A compilation_service_pb2.LatexCompilationResponse, whose status is either
-    compilation_service_pb2.LatexCompilationResponse.SUCCESS or compilation_service_pb2.LatexCompilationResponse.ERROR
+    compilation_service_pb2.LatexCompilationResponse.SUCCESS
+    or compilation_service_pb2.LatexCompilationResponse.ERROR
   """
   proc = subprocess.Popen(
     ["pdflatex", "-interaction=nonstopmode",
-     "{}.tex".format(_LATEX_MAIN_FILE_BASENAME)], cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+     "{}.tex".format(_LATEX_MAIN_FILE_BASENAME)], cwd=working_dir,
+    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, _ = proc.communicate()
   return_code = proc.returncode
 
@@ -67,7 +65,9 @@ def _CompileLatexAtDir(working_dir):
       working_dir,
       _LATEX_CONTENT_TEX_FILE_NAME)).read()
   result.status = (
-    return_code == 0) and compilation_service_pb2.LatexCompilationResponse.SUCCESS or compilation_service_pb2.LatexCompilationResponse.ERROR
+    (return_code == 0)
+    and compilation_service_pb2.LatexCompilationResponse.SUCCESS
+    or compilation_service_pb2.LatexCompilationResponse.ERROR)
   if return_code == 0:
     result.pdf_content = open(
       os.path.join(working_dir, "{}.pdf".format(
@@ -106,7 +106,8 @@ def _ParseNodeIdAndErrorMessageMapping(
 
   Args:
     latex_content: the mindmap.tex file content, including frames'
-      node markers. We use it to extract mappings between line numbers and frames
+      node markers. We use it to extract mappings between line numbers and
+      frames
     latex_compilation_error_msg: the latex compilation error message, containing
       line numbers and error messages.
 
@@ -170,7 +171,8 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   org.OutputToBeamerLatex(output_tex_file_loc)
 
   second_attempt_result = _CompileLatexAtDir(work_dir)
-  if second_attempt_result.status == compilation_service_pb2.LatexCompilationResponse.SUCCESS:
+  if (second_attempt_result.status ==
+      compilation_service_pb2.LatexCompilationResponse.SUCCESS):
     result.status = compilation_service_pb2.LatexCompilationResponse.EMBEDDED
 
   else:
@@ -184,8 +186,8 @@ class CompilationServer(compilation_service_pb2.LatexCompilationServicer):
     """Compile the mindmap along with the files attached in the request.
 
     We will create a working directory, prepare its content, and compile.
-    When there is a latex compilation error, we will put the latex error log into
-    the response.
+    When there is a latex compilation error, we will put the latex error log
+    into the response.
 
     Returns:
       A compilation_service_pb2.LatexCompilationResponse object.
@@ -228,7 +230,8 @@ class CompilationServer(compilation_service_pb2.LatexCompilationServicer):
 
     initial_compilation_result = _LatexCompileOrTryEmbedErrorMessage(
       org, work_dir)
-    if initial_compilation_result.status == compilation_service_pb2.LatexCompilationResponse.CANNOTFIX:
+    if (initial_compilation_result.status ==
+        compilation_service_pb2.LatexCompilationResponse.CANNOTFIX):
       return initial_compilation_result
 
     try:

@@ -2,12 +2,20 @@
 # source: compilation_service.proto
 
 import sys
-_b=sys.version_info[0]<3 and (lambda x:x) or (lambda x:x.encode('latin1'))
+
+import grpc
+from grpc.beta import implementations as beta_implementations
+from grpc.beta import interfaces as beta_interfaces
+from grpc.framework.common import cardinality
+from grpc.framework.interfaces.face import utilities as face_utilities
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf import descriptor_pb2
+
+_b=sys.version_info[0]<3 and (lambda x:x) or (lambda x:x.encode('latin1'))
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -313,11 +321,6 @@ HealthCheckResponse = _reflection.GeneratedProtocolMessageType('HealthCheckRespo
 _sym_db.RegisterMessage(HealthCheckResponse)
 
 
-import grpc
-from grpc.beta import implementations as beta_implementations
-from grpc.beta import interfaces as beta_interfaces
-from grpc.framework.common import cardinality
-from grpc.framework.interfaces.face import utilities as face_utilities
 
 
 class LatexCompilationStub(object):

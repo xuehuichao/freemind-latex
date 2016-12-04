@@ -16,7 +16,6 @@ Advanced usages:
 """
 
 import logging
-import grpc
 import os
 import platform
 import shutil
@@ -26,9 +25,8 @@ import time
 
 import gflags
 import portpicker
-from freemindlatex import compilation_server_lib
-from freemindlatex import compilation_client_lib
-from freemindlatex import compilation_service_pb2
+from freemindlatex import (compilation_client_lib, compilation_server_lib,
+                           compilation_service_pb2)
 
 from google.apputils import app
 
@@ -123,14 +121,14 @@ def RunEditingEnvironment(directory, server_address):
     ['sh', freemind_sh_path, mindmap_file_loc],
     stdout=freemind_log_file, stderr=freemind_log_file)
 
-  mtime_list = compilation_client_lib._GetMTimeListForDir(directory)
+  mtime_list = compilation_client_lib.GetMTimeListForDir(directory)
   try:
     while True:
       time.sleep(gflags.FLAGS.seconds_between_rechecking)
       if freemind_proc.poll() is not None or viewer_proc.poll() is not None:
         raise UserExitedEditingEnvironment
 
-      new_mtime_list = compilation_client_lib._GetMTimeListForDir(directory)
+      new_mtime_list = compilation_client_lib.GetMTimeListForDir(directory)
       if new_mtime_list != mtime_list:
         mtime_list = new_mtime_list
         latex_client.CompileDir(directory)

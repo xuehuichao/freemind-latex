@@ -178,41 +178,6 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   return result
 
 
-def _CompileInWorkingDirectory(work_dir):
-  """Compiles files in a working dir (temporary) to produce the final PDF.
-
-  Args:
-    work_dir: Directory containing the running files: mindmap.mm, and the
-      image files.
-
-  Returns:
-    A compilation_service_pb2.LatexCompilationResponse with the final pdf content.
-  """
-  org = convert.Organization(
-    codecs.open(
-      os.path.join(
-        work_dir,
-        "mindmap.mm"),
-      'r',
-      'utf8').read())
-
-  initial_compilation_result = _LatexCompileOrTryEmbedErrorMessage(
-    org, work_dir)
-  if initial_compilation_result.status == compilation_service_pb2.LatexCompilationResponse.CANNOTFIX:
-    return initial_compilation_result
-
-  try:
-    _CompileBibtexAtDir(work_dir)
-  except BibtexCompilationError as _:
-    pass
-  _CompileLatexAtDir(work_dir)
-  final_compilation_result = _CompileLatexAtDir(work_dir)
-
-  result = initial_compilation_result
-  result.pdf_content = final_compilation_result.pdf_content
-  return result
-
-
 def CompileMindmapPackage(latex_compilation_request):
   """Compile the mindmap along with the files attached in the request.
 
@@ -253,7 +218,28 @@ def CompileMindmapPackage(latex_compilation_request):
           work_dir, filename))
 
   # Compile
-  result = _CompileInWorkingDirectory(work_dir)
+  org = convert.Organization(
+    codecs.open(
+      os.path.join(
+        work_dir,
+        "mindmap.mm"),
+      'r',
+      'utf8').read())
+
+  initial_compilation_result = _LatexCompileOrTryEmbedErrorMessage(
+    org, work_dir)
+  if initial_compilation_result.status == compilation_service_pb2.LatexCompilationResponse.CANNOTFIX:
+    return initial_compilation_result
+
+  try:
+    _CompileBibtexAtDir(work_dir)
+  except BibtexCompilationError as _:
+    pass
+  _CompileLatexAtDir(work_dir)
+  final_compilation_result = _CompileLatexAtDir(work_dir)
+
+  result = initial_compilation_result
+  result.pdf_content = final_compilation_result.pdf_content
 
   # Clean-up
   shutil.rmtree(compile_dir)

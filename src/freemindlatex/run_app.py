@@ -25,8 +25,8 @@ import time
 
 import gflags
 import portpicker
-from freemindlatex import (compilation_client_lib, compilation_server_lib,
-                           compilation_service_pb2)
+from freemindlatex import compilation_client_lib
+from freemindlatex import compilation_server_lib
 
 from google.apputils import app
 

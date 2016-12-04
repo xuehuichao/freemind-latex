@@ -193,8 +193,8 @@ class CompilationServer(compilation_service_pb2.LatexCompilationServicer):
       A compilation_service_pb2.LatexCompilationResponse object.
 
     Args:
-      A compilation_service_pb2.LatexCompilationRequest object, containing all the
-      involved file content.
+      A compilation_service_pb2.LatexCompilationRequest object, containing
+      all the involved file content.
     """
     compile_dir = tempfile.mkdtemp()
     work_dir = os.path.join(compile_dir, "working")

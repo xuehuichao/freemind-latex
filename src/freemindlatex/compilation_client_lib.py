@@ -56,9 +56,12 @@ class LatexCompilationClient(object):
     try:
       response = self._healthz_stub.Check(
         compilation_service_pb2.HealthCheckRequest())
-    except:
-      return False
-    return response.status == compilation_service_pb2.HealthCheckResponse.SERVING
+    except grpc.RpcError as e:
+      if e.code() == grpc.StatusCode.UNAVAILABLE:
+        return False
+      raise
+    return (response.status ==
+            compilation_service_pb2.HealthCheckResponse.SERVING)
 
   def CompileDir(self, directory):
     """Compiles the files in user's directory, and update the pdf file.

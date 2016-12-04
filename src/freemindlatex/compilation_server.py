@@ -178,83 +178,73 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   return result
 
 
-def CompileMindmapPackage(latex_compilation_request):
-  """Compile the mindmap along with the files attached in the request.
-
-  We will create a working directory, prepare its content, and compile.
-  When there is a latex compilation error, we will put the latex error log into
-  the response.
-
-  Returns:
-    A compilation_service_pb2.LatexCompilationResponse object.
-
-  Args:
-    # TODO(xuehuchao): revise this, as it is not true.
-    A compilation_service_pb2.LatexCompilationRequest object, containing all the
-    involved file content.
-  """
-
-  compile_dir = tempfile.mkdtemp()
-  work_dir = os.path.join(compile_dir, "working")
-  logging.info("Compiling at %s", work_dir)
-  _MkdirP(work_dir)
-
-  # Preparing the temporary directory content
-  for filepath, content in latex_compilation_request.iteritems():
-    target_loc = os.path.join(work_dir, filepath)
-    dirname = os.path.dirname(target_loc)
-    _MkdirP(dirname)
-    with open(target_loc, 'w') as ofile:
-      ofile.write(content)
-
-  static_file_dir = os.path.join(
-    os.path.dirname(
-      os.path.realpath(__file__)),
-    "../../../../share/freemindlatex/static_files")
-  for filename in os.listdir(static_file_dir):
-    shutil.copyfile(
-      os.path.join(
-        static_file_dir, filename), os.path.join(
-          work_dir, filename))
-
-  # Compile
-  org = convert.Organization(
-    codecs.open(
-      os.path.join(
-        work_dir,
-        "mindmap.mm"),
-      'r',
-      'utf8').read())
-
-  initial_compilation_result = _LatexCompileOrTryEmbedErrorMessage(
-    org, work_dir)
-  if initial_compilation_result.status == compilation_service_pb2.LatexCompilationResponse.CANNOTFIX:
-    return initial_compilation_result
-
-  try:
-    _CompileBibtexAtDir(work_dir)
-  except BibtexCompilationError as _:
-    pass
-  _CompileLatexAtDir(work_dir)
-  final_compilation_result = _CompileLatexAtDir(work_dir)
-
-  result = initial_compilation_result
-  result.pdf_content = final_compilation_result.pdf_content
-
-  # Clean-up
-  shutil.rmtree(compile_dir)
-
-  return result
-
-
 class CompilationServer(compilation_service_pb2.LatexCompilationServicer):
 
   def CompilePackage(self, request, context):
-    file_info_map = dict()
-    for file_info in request.file_infos:
-      file_info_map[file_info.filepath] = file_info.content
+    """Compile the mindmap along with the files attached in the request.
 
-    return CompileMindmapPackage(file_info_map)
+    We will create a working directory, prepare its content, and compile.
+    When there is a latex compilation error, we will put the latex error log into
+    the response.
+
+    Returns:
+      A compilation_service_pb2.LatexCompilationResponse object.
+
+    Args:
+      A compilation_service_pb2.LatexCompilationRequest object, containing all the
+      involved file content.
+    """
+    compile_dir = tempfile.mkdtemp()
+    work_dir = os.path.join(compile_dir, "working")
+    logging.info("Compiling at %s", work_dir)
+    _MkdirP(work_dir)
+
+    # Preparing the temporary directory content
+    for file_info in request.file_infos:
+      target_loc = os.path.join(work_dir, file_info.filepath)
+      dirname = os.path.dirname(target_loc)
+      _MkdirP(dirname)
+      with open(target_loc, 'w') as ofile:
+        ofile.write(file_info.content)
+
+    static_file_dir = os.path.join(
+      os.path.dirname(
+        os.path.realpath(__file__)),
+      "../../../../share/freemindlatex/static_files")
+    for filename in os.listdir(static_file_dir):
+      shutil.copyfile(
+        os.path.join(
+          static_file_dir, filename), os.path.join(
+            work_dir, filename))
+
+    # Compile
+    org = convert.Organization(
+      codecs.open(
+        os.path.join(
+          work_dir,
+          "mindmap.mm"),
+        'r',
+        'utf8').read())
+
+    initial_compilation_result = _LatexCompileOrTryEmbedErrorMessage(
+      org, work_dir)
+    if initial_compilation_result.status == compilation_service_pb2.LatexCompilationResponse.CANNOTFIX:
+      return initial_compilation_result
+
+    try:
+      _CompileBibtexAtDir(work_dir)
+    except BibtexCompilationError as _:
+      pass
+    _CompileLatexAtDir(work_dir)
+    final_compilation_result = _CompileLatexAtDir(work_dir)
+
+    result = initial_compilation_result
+    result.pdf_content = final_compilation_result.pdf_content
+
+    # Clean-up
+    shutil.rmtree(compile_dir)
+
+    return result
 
 
 class HealthzServer(compilation_service_pb2.HealthServicer):

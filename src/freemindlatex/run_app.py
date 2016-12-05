@@ -9,10 +9,11 @@ Basic usage:
   recompile the freemind file into slides upon your modifications.
 
 Advanced usages:
+  freemindlatex local # Use your own computer for latex compilation
   freemindlatex --port 8000 server # Start the latex compilation server at a
     selected port
   freemindlatex --using_server localhost:8000 client # Compiles documents
-    with a remote server.
+    with a non-default server.
 """
 
 import logging
@@ -32,7 +33,7 @@ from google.apputils import app  # pylint: disable=no-name-in-module
 
 gflags.DEFINE_string(
   "using_server",
-  "",
+  "sword.xuehuichao.com:8117",
   "The latex compilation server address, ip:port. When not specified, "
   "will start the server at an unused port.")
 gflags.DEFINE_integer("seconds_between_rechecking", 1,
@@ -163,14 +164,7 @@ def main(argv):
     port = gflags.FLAGS.port or portpicker.pick_unused_port()
     compilation_server_lib.RunServerAtPort(port)
 
-  elif argv[1:] == ['client']:
-    if not gflags.FLAGS.using_server:
-      logging.fatal(
-        "Please specify the server address when running in the client mode "
-        "via --using_server")
-    RunEditingEnvironment(directory, server_address=gflags.FLAGS.using_server)
-
-  elif argv[1:] == []:
+  elif argv[1:] == ['local']:
     port = gflags.FLAGS.port or portpicker.pick_unused_port()
     server_proc = subprocess.Popen(
       ["python", argv[0], "--port", str(port), "server"])
@@ -186,6 +180,13 @@ def main(argv):
         server_proc.kill()
       except OSError:
         pass
+
+  elif argv[1:] == []:
+    if not gflags.FLAGS.using_server:
+      logging.fatal(
+        "Please specify the server address when running in the client mode "
+        "via --using_server")
+    RunEditingEnvironment(directory, server_address=gflags.FLAGS.using_server)
 
   else:
     print "Unable to recognize command %r" % argv

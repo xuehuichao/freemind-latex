@@ -17,42 +17,42 @@ It will bring up freemind for editing, evince for slides preview, and keep monit
 
 ## Why not just PowerPoint?
 
-Writing slides is hard -- you have to get the logics and details to work at the same time.
+Tweaking fonts suck. But you do it all the time.
 
-* While you are tweaking the fonts, are you sure the high-level logic already makes sense? 
-* Want to move text between slides? Congrats, please re-tweak the fonts again.
+* During the first round.
+* After you move slides.
+* After you add content.
+* After you indent a paragraph
+* ...
 
 With freemindlatex, we ask you to just focus on the logic.
 
-* You see the outline and content in one page, in freemind.
-* We format everything automatically for you, in the most professional template -- LaTeX beamer.
-* Plus -- you get LaTex math equations for free.
+* Stare are the outline, with freemind.
+* Auto formatting, with LaTeX beamer.
+* Bonus: you get LaTex math equations for free.
 
-The slides will follow.
 
 ## Installation
-The tool runs on Linux and MacOS, with Python.
-You'll need to first install LaTeX, python, [pip](https://pypi.python.org/pypi/pip), and a PDF viewer.
+The tool runs on Linux, MacOS and Windows, with Python.
 
-### Linux
+First, make sure you install evince, or skim as the PDF viewer:
+1. Evince, for linux and Windows: https://wiki.gnome.org/Apps/Evince
+2. Skim, for MacOS: http://skim-app.sourceforge.net/
 
-Install Latex and most of the packages. For example, in Ubuntu, that would be
-```sh
-sudo apt-get install texlive-full python evince
-pip install freemind-latex
-```
-
-### MacOS
-
-You'll need to install
-
-1. MacTex: https://tug.org/mactex/
-2. Skim: http://skim-app.sourceforge.net/
-
-Then
+Then install it with
 ```sh
 pip install freemind-latex
 ```
+
+### Running LaTeX locally
+By default, this tool connects to my server (sword.xuehuichao.com:8117) for LaTeX compilation.
+You may also run latex on your own computer.
+In this case, please make sure you have the full texlive (https://www.tug.org/texlive) installed.
+1. On MacOS: https://tug.org/mactex/
+2. On Ubuntu: `sudo apt-get install texlive-full`
+
+Then, instead of `freemindlatex`, please run `freemindlatex local` in your working directory.
+
 
 ## For development
 

@@ -7,5 +7,5 @@ ADD setup.py requirements.txt /freemindlatex/
 ADD src/freemindlatex/* /freemindlatex/src/freemindlatex/
 WORKDIR /freemindlatex
 RUN pip install .
-EXPOSE 8087
+EXPOSE 8117
 CMD freemindlatex --port 8117 server

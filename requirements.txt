@@ -7,5 +7,5 @@ portpicker
 google-apputils
 futures
 gevent
-protobuf
+protobuf>=3.0.0
 grpcio

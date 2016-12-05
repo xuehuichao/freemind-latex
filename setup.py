@@ -13,7 +13,7 @@ for (path, dirs, filenames) in os.walk("freemind"):
 
 setup(
   name="freemindlatex",
-  version="1.0.1",
+  version="1.0.2",
   author="Huichao Xue",
   author_email="xue.huichao@gmail.com",
   url="https://github.com/xuehuichao/freemind-latex",

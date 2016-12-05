@@ -1,4 +1,4 @@
-six
+six>=1.9
 python-gflags
 bibtexparser
 pypdf2

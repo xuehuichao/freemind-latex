@@ -1,0 +1,47 @@
+/* To compile: run
+   python -m grpc.tools.protoc -Isrc/freemindlatex --python_out=src/freemindlatex --grpc_python_out=src/freemindlatex src/freemindlatex/compilation_service.proto
+  */
+
+syntax = "proto3";
+
+message LatexCompilationRequest {
+  message FileInfo {
+    string filepath = 1;
+    bytes content = 2; 
+  }
+  repeated FileInfo file_infos = 1;
+}
+
+message LatexCompilationResponse {
+  enum Status {
+    ERROR = 0;
+    SUCCESS = 1;
+    EMBEDDED = 2; 		// The attempt to fix it worked. Error messages are embedded into the compiled slides.
+    CANNOTFIX = 3;		// The attempt to fix it still failed.
+  }
+  Status status = 1;
+  string source_code = 2;
+  string compilation_log = 3;
+  bytes pdf_content = 4;
+}
+
+service LatexCompilation {
+  rpc CompilePackage(LatexCompilationRequest) returns (LatexCompilationResponse) {}
+}
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+}
+
+service Health {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+}

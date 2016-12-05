@@ -3,3 +3,9 @@ python-gflags
 bibtexparser
 pypdf2
 timeout-decorator
+portpicker
+google-apputils
+futures
+gevent
+protobuf
+grpcio

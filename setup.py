@@ -1,7 +1,8 @@
 import glob
 import os
-from setuptools import setup
+
 from setuptools import find_packages
+from setuptools import setup
 
 freemind_dirlist = []
 for (path, dirs, filenames) in os.walk("freemind"):
@@ -26,7 +27,8 @@ setup(
   zip_safe=True,
   include_package_data=True,
   entry_points={'console_scripts': [
-      "freemindlatex = freemindlatex.__main__:main"]},
+    "freemindlatex = freemindlatex.__entry__:main",
+  ]},
   data_files=[
     ("share/freemindlatex/static_files", glob.glob("static_files/*")),
     ("share/freemindlatex/example", glob.glob("example/*")),

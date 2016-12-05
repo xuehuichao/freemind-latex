@@ -27,15 +27,16 @@ Tweaking fonts suck. But you do it all the time.
 
 With freemindlatex, we ask you to just focus on the logic.
 
-* Stare are the outline, with freemind.
+* Work on the outline, with freemind.
 * Auto formatting, with LaTeX beamer.
-* Bonus: you get LaTex math equations for free.
+* Bonus: LaTex math equations for free.
 
 
 ## Installation
 The tool runs on Linux, MacOS and Windows, with Python.
 
 First, make sure you install evince, or skim as the PDF viewer:
+
 1. Evince, for linux and Windows: https://wiki.gnome.org/Apps/Evince
 2. Skim, for MacOS: http://skim-app.sourceforge.net/
 

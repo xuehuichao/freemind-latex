@@ -131,6 +131,7 @@ def RunEditingEnvironment(directory, server_address):
 
       new_mtime_list = compilation_client_lib.GetMTimeListForDir(directory)
       if new_mtime_list != mtime_list:
+        time.sleep(0.5)         # Wait till files are fully written
         mtime_list = new_mtime_list
         latex_client.CompileDir(directory)
 

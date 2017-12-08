@@ -165,8 +165,16 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
     return result
 
   # Second attempt
-  frame_and_error_message_map = _ParseNodeIdAndErrorMessageMapping(
-    result.source_code, result.compilation_log)
+  try:
+    frame_and_error_message_map = _ParseNodeIdAndErrorMessageMapping(
+      result.source_code, result.compilation_log)
+  except KeyError as e:
+    logging.error(
+      "Error parsing node-id from error message: %s",
+      result.compilation_log)
+    result.status = compilation_service_pb2.LatexCompilationResponse.CANNOTFIX
+    return result
+
   org.LabelErrorsOnFrames(frame_and_error_message_map)
   org.OutputToBeamerLatex(output_tex_file_loc)
 
@@ -191,7 +199,7 @@ def _PrepareCompilationBaseDirectory(directory):
     shutil.copyfile(
       os.path.join(
         static_file_dir, filename), os.path.join(
-          directory, filename))
+        directory, filename))
 
 
 class CompilationServer(compilation_service_pb2.LatexCompilationServicer):

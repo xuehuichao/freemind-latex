@@ -238,7 +238,7 @@ class Node(object):
     if self.level == 0:
       return
 
-    writer.write(self.GetText(format))
+    writer.write(self.GetText(print_format))
 
   def SetPrintingFunc(self, func):
     self.printing_func = func
@@ -973,6 +973,7 @@ def main():
 
   if gflags.FLAGS.latex_file is not None:
     org.OutputToLatex(gflags.FLAGS.latex_file)
+
 
 if __name__ == "__main__":
   main()

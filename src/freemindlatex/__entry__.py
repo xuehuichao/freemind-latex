@@ -1,7 +1,10 @@
 """Stub file for running the app via setup.py's entry point.
 """
 
-from google.apputils import run_script_module  # pylint: disable=no-name-in-module
+from __future__ import absolute_import
+
+# pylint: disable=import-error, no-name-in-module
+from google.apputils import run_script_module
 
 
 def main():

@@ -15,6 +15,7 @@ Advanced usages:
   freemindlatex --using_server localhost:8000 client # Compiles documents
     with a non-default server.
 """
+from __future__ import absolute_import
 
 import logging
 import os
@@ -26,10 +27,10 @@ import time
 
 import gflags
 import portpicker
-from freemindlatex import compilation_client_lib
-from freemindlatex import compilation_server_lib
+from freemindlatex import compilation_client_lib, compilation_server_lib
 
-from google.apputils import app  # pylint: disable=no-name-in-module
+# pylint: disable=import-error, no-name-in-module
+from google.apputils import app
 
 gflags.DEFINE_string(
   "using_server",

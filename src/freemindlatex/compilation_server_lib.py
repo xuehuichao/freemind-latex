@@ -8,9 +8,9 @@ import shutil
 import subprocess
 import tempfile
 import time
+from concurrent import futures
 
 import grpc
-from concurrent import futures
 from freemindlatex import compilation_service_pb2, convert
 
 _LATEX_MAIN_FILE_BASENAME = "slides"
@@ -65,9 +65,9 @@ def _CompileLatexAtDir(working_dir):
       working_dir,
       _LATEX_CONTENT_TEX_FILE_NAME)).read()
   result.status = (
-    (return_code == 0)
-    and compilation_service_pb2.LatexCompilationResponse.SUCCESS
-    or compilation_service_pb2.LatexCompilationResponse.ERROR)
+    compilation_service_pb2.LatexCompilationResponse.SUCCESS
+    if return_code == 0
+    else compilation_service_pb2.LatexCompilationResponse.ERROR)
   if return_code == 0:
     result.pdf_content = open(
       os.path.join(working_dir, "{}.pdf".format(
@@ -168,7 +168,7 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   try:
     frame_and_error_message_map = _ParseNodeIdAndErrorMessageMapping(
       result.source_code, result.compilation_log)
-  except KeyError as e:
+  except KeyError as _:
     logging.error(
       "Error parsing node-id from error message: %s",
       result.compilation_log)

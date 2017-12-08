@@ -48,12 +48,13 @@ class BibDatabase(object):
     first_author_lastname = names[0].split(',')[0]
     if len(names) == 1:
       return first_author_lastname
-    elif len(names) >= 3:
+
+    if len(names) >= 3:
       return "%s et. al. " % first_author_lastname
-    else:
-      second_author_lastname = names[1].split(',')[0]
-      return "%s and %s" % (first_author_lastname,
-                            second_author_lastname)
+
+    second_author_lastname = names[1].split(',')[0]
+    return "%s and %s" % (first_author_lastname,
+                          second_author_lastname)
 
   def GetOneArtCiteHTML(self, name):
     try:
@@ -499,7 +500,7 @@ def OutputOrderedList(current_node):
 
   def PrintInHTMLFormat(writer):
     current_node.PrintSelfToWriter(writer)
-    if len(current_node.GetPrintableChildren()) > 0:
+    if current_node.GetPrintableChildren():
       writer.write('<ol>')
       for t in current_node.GetPrintableChildren():
         if t.IsStoryNode() or t.IsCommentNode():
@@ -516,7 +517,7 @@ def OutputOrderedList(current_node):
 
   def PrintInLatexFormatWithTag(writer, tag='latex'):
     current_node.PrintSelfToWriter(writer, tag)
-    if len(current_node.GetPrintableChildren()) > 0:
+    if current_node.GetPrintableChildren():
       writer.write(r'\begin{enumerate}')
       for t in current_node.GetPrintableChildren():
         if t.IsStoryNode() or t.IsCommentNode():
@@ -545,7 +546,7 @@ def OutputUnorderedList(current_node):
 
   def PrintInHTMLFormat(writer):
     current_node.PrintSelfToWriter(writer)
-    if len(current_node.GetPrintableChildren()) > 0:
+    if current_node.GetPrintableChildren():
       writer.write('<ul>')
       for t in current_node.GetPrintableChildren():
         if t.IsStoryNode() or t.IsCommentNode():
@@ -562,7 +563,7 @@ def OutputUnorderedList(current_node):
 
   def PrintInLatexFormatWithFormatTag(writer, tag='latex'):
     current_node.PrintSelfToWriter(writer, tag)
-    if len(current_node.GetPrintableChildren()) > 0:
+    if current_node.GetPrintableChildren():
       writer.write(r'\begin{itemize}')
       for t in current_node.GetPrintableChildren():
         if t.IsStoryNode() or t.IsCommentNode():
@@ -591,7 +592,7 @@ def OutputHAlignedList(current_node):
 
   def PrintInHTMLFormat(writer):
     current_node.PrintSelfToWriter(writer)
-    if len(current_node.GetPrintableChildren()) > 0:
+    if current_node.GetPrintableChildren():
       writer.write('<ul>')
       for t in current_node.GetPrintableChildren():
         if t.IsStoryNode() or t.IsCommentNode():
@@ -608,7 +609,7 @@ def OutputHAlignedList(current_node):
 
   def PrintInLatexFormatWithFormatTag(writer, tag='latex'):
     current_node.PrintSelfToWriter(writer, tag)
-    if len(current_node.GetPrintableChildren()) > 0:
+    if current_node.GetPrintableChildren():
       all_children = current_node.GetPrintableChildren()
       algned_children = [t for t in all_children if not (
         t.IsStoryNode() or t.IsCommentNode())]
@@ -875,7 +876,7 @@ def PrintCurrentAsSection(current_node, tag):
       latex_tag = 'subsubsection'
     assert latex_tag is not None
     txt = current_node.GetText('latex')
-    if len(txt.strip()) > 0:
+    if txt.strip():
       writer.write(r"\%s{" % latex_tag)
       writer.write(txt)
       writer.write("}\n")
@@ -897,7 +898,7 @@ def PrintCurrentAsSection(current_node, tag):
       latex_tag = 'subsubsection'
     assert latex_tag is not None
     txt = current_node.GetText('latex')
-    if len(txt.strip()) > 0:
+    if txt.strip():
       writer.write(r"\%s{" % latex_tag)
       writer.write(txt)
       writer.write("}\n")

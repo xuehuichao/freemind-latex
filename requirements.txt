@@ -1,4 +1,4 @@
-six>=1.9
+six
 python-gflags
 bibtexparser
 pypdf2
@@ -7,5 +7,7 @@ portpicker
 google-apputils
 futures
 gevent
-protobuf>=3.0.0
 grpcio
+protobuf
+pypdf2
+timeout-decorator

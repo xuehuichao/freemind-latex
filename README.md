@@ -10,7 +10,7 @@ This tool converts a mindmap into PDF slides (via LaTeX beamer). You can write [
 Go to an empty directory and start editing it
 ```sh
 cd /path/to/your/document/directory
-freemindlatex
+python /path/to/freemind-latex.zip
 ```
 
 It will bring up freemind for editing, evince for slides preview, and keep monitoring the file changes. While you edit the mindmap, slides content will refresh.
@@ -40,10 +40,7 @@ First, make sure you install evince, or skim as the PDF viewer:
 1. Evince, for linux and Windows: https://wiki.gnome.org/Apps/Evince
 2. Skim, for MacOS: http://skim-app.sourceforge.net/
 
-Then install it with
-```sh
-pip install freemind-latex
-```
+Then download software [release]() (ubuntu).
 
 ### Running LaTeX locally
 By default, this tool connects to my server (sword.xuehuichao.com:8117) for LaTeX compilation.
@@ -58,18 +55,11 @@ Then, instead of `freemindlatex`, please run `freemindlatex local` in your worki
 ## For development
 
 ### Testing
-
 ```sh
-virtualenv testenv
-source testenv/bin/activate
-pip install --upgrade . && python -m pytest tests/
+bazel test ...
 ```
 
-### Release
-
+### Code style checking
 ```sh
-python setup.py sdist
-python setup.py bdist_wheel
-python setup.py bdist_wheel --universal
-twine upload dist/*
+find freemindlatex/ -name *.py |  xargs pylint --rcfile=.pylintrc
 ```

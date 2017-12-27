@@ -1,0 +1,8 @@
+filegroup(
+    name = "freemind",
+    srcs = glob([
+        "*",
+        "**/*",
+    ]),
+    visibility = ["//visibility:public"],
+)

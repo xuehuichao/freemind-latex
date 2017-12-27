@@ -1,5 +1,5 @@
 filegroup(
-  name="example",
-  srcs=glob(["*"]),
-  visibility=["//visibility:public"],
+    name = "example",
+    srcs = glob(["*"]),
+    visibility = ["//visibility:public"],
 )

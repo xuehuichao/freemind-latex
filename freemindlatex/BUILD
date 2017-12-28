@@ -4,6 +4,9 @@ load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 py_library(
     name = "init_dir_lib",
     srcs = ["init_dir_lib.py"],
+    data = [
+        "//freemindlatex/example",
+    ],
 )
 
 py_proto_library(
@@ -13,31 +16,56 @@ py_proto_library(
     deps = [requirement("protobuf")],
 )
 
-py_binary(
-    name = "run_app",
-    srcs = [
-        "compilation_client_lib.py",
-        "compilation_server_lib.py",
-        "convert.py",
-        "run_app.py",
-    ],
+py_library(
+    name = "compilation_client_lib",
+    srcs = ["compilation_client_lib.py"],
     data = [
-        "//freemindlatex/example",
-        "//freemindlatex/static_files",
+        "@freemind",
+    ],
+    deps = [
+        requirement("python-gflags"),
+        ":compilation_service_proto_lib",
+        requirement("grpcio"),
+    ],
+)
+
+py_library(
+    name = "convert_lib",
+    srcs = ["convert_lib.py"],
+    deps = [
+        requirement("python-gflags"),
+        requirement("bibtexparser"),
+    ],
+)
+
+py_library(
+    name = "compilation_server_lib",
+    srcs = ["compilation_server_lib.py"],
+    data = [
         "@freemind",
     ],
     deps = [
         ":compilation_service_proto_lib",
+        ":convert_lib",
+        requirement("futures"),
+        requirement("grpcio"),
+    ],
+)
+
+py_binary(
+    name = "freemindlatex_app_main",
+    srcs = [
+        "freemindlatex_app_main.py",
+    ],
+    data = [
+        "//freemindlatex/static_files",
+    ],
+    deps = [
+        ":compilation_client_lib",
+        ":compilation_server_lib",
         ":init_dir_lib",
         requirement("six"),
-        requirement("python-gflags"),
-        requirement("bibtexparser"),
-        requirement("pypdf2"),
-        requirement("timeout-decorator"),
         requirement("portpicker"),
-        requirement("futures"),
-        requirement("gevent"),
-        requirement("grpcio"),
     ],
 )
 
@@ -45,7 +73,7 @@ py_library(
     name = "integration_test_lib",
     testonly = 1,
     srcs = ["integration_test_lib.py"],
-    data = [":run_app"],
+    data = [":freemindlatex_app_main"],
 )
 
 py_test(

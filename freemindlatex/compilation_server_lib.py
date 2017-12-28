@@ -14,7 +14,7 @@ import grpc
 from freemindlatex import (
   compilation_service_pb2,
   compilation_service_pb2_grpc,
-  convert)
+  convert_lib)
 
 _LATEX_MAIN_FILE_BASENAME = "slides"
 _LATEX_CONTENT_TEX_FILE_NAME = "mindmap.tex"
@@ -206,7 +206,7 @@ def _PrepareCompilationBaseDirectory(directory):
 
 class CompilationServer(compilation_service_pb2_grpc.LatexCompilationServicer):
 
-  def CompilePackage(self, request, context):
+  def CompilePackage(self, request, context):  # pylint: disable=no-self-use
     """Compile the mindmap along with the files attached in the request.
 
     We will create a working directory, prepare its content, and compile.
@@ -235,7 +235,7 @@ class CompilationServer(compilation_service_pb2_grpc.LatexCompilationServicer):
         ofile.write(file_info.content)
 
     # Compile
-    org = convert.Organization(
+    org = convert_lib.Organization(
       codecs.open(
         os.path.join(
           work_dir,
@@ -267,7 +267,7 @@ class CompilationServer(compilation_service_pb2_grpc.LatexCompilationServicer):
 
 class HealthzServer(compilation_service_pb2_grpc.HealthServicer):
 
-  def Check(self, request, context):
+  def Check(self, request, context):  # pylint: disable=no-self-use
     response = compilation_service_pb2.HealthCheckResponse()
     response.status = compilation_service_pb2.HealthCheckResponse.SERVING
     return response

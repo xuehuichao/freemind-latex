@@ -18,7 +18,8 @@ class ClientServerIntegrationTestFixture(unittest.TestCase):
     self._server_port = portpicker.pick_unused_port()
     self._compilation_server_proc = subprocess.Popen(
       [os.path.join(
-        os.environ["TEST_SRCDIR"], "__main__/freemindlatex/run_app"),
+        os.environ["TEST_SRCDIR"],
+        "__main__/freemindlatex/freemindlatex_app_main"),
         "--port", str(self._server_port), "server"])
     self._server_address = "127.0.0.1:{}".format(self._server_port)
     self._compilation_client = compilation_client_lib.LatexCompilationClient(

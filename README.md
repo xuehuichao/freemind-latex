@@ -54,6 +54,14 @@ Then, instead of `freemindlatex`, please run `freemindlatex local` in your worki
 
 ## For development
 
+Pushing the base image:
+
+```sh
+cd server_base_image
+docker build -t xuehuichao/freemindlatex_base_image:latest
+docker push xuehuichao/freemindlatex_base_image:latest
+```
+
 ### Testing
 ```sh
 bazel test ...

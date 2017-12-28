@@ -33,14 +33,17 @@ With freemindlatex, we ask you to just focus on the logic.
 
 
 ## Installation
-The tool runs on Linux, MacOS and Windows, with Python.
 
-First, make sure you install evince, or skim as the PDF viewer:
+The software is packaged into a zip file.
+
+* On Ubuntu, you may directly download it following this [link](https://www.dropbox.com/s/rqxjr73o3rczos4/freemindlatex_app_main.zip?dl=0).
+* On Windows and MacOs, first install [bazel](https://www.dropbox.com/s/rqxjr73o3rczos4/freemindlatex_app_main.zip?dl=0), then `bazel build freemindlatex:freemindlatex_app_main --build_python_zip`, and you will get a zip file created in `bazel-bin/freemindlatex/freemindlatex_app_main.zip`.
+
+Before running, make sure you install evince, or skim as the PDF viewer:
 
 1. Evince, for linux and Windows: https://wiki.gnome.org/Apps/Evince
 2. Skim, for MacOS: http://skim-app.sourceforge.net/
 
-Then download software [release]() (ubuntu).
 
 ### Running LaTeX locally
 By default, this tool connects to my server (sword.xuehuichao.com:8117) for LaTeX compilation.
@@ -49,17 +52,14 @@ In this case, please make sure you have the full texlive (https://www.tug.org/te
 1. On MacOS: https://tug.org/mactex/
 2. On Ubuntu: `sudo apt-get install texlive-full`
 
-Then, instead of `freemindlatex`, please run `freemindlatex local` in your working directory.
+Then, instead of `python /path/to/freemind-latex.zip`, please run `python /path/to/freemind-latex.zip local` in your working directory.
 
 
 ## For development
 
-Pushing the base image:
-
+### Release
 ```sh
-cd server_base_image
-docker build -t xuehuichao/freemindlatex_base_image:latest
-docker push xuehuichao/freemindlatex_base_image:latest
+bazel build freemindlatex:freemindlatex_app_main --build_python_zip
 ```
 
 ### Testing
@@ -71,3 +71,4 @@ bazel test ...
 ```sh
 find freemindlatex/ -name *.py |  xargs pylint --rcfile=.pylintrc
 ```
+

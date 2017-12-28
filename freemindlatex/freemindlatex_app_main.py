@@ -97,7 +97,7 @@ def RunEditingEnvironment(directory, server_address):
   freemind_sh_path = os.path.join(
     os.path.dirname(
       os.path.realpath(sys.modules[__name__].__file__)),
-    "../../../../share/freemindlatex/freemind/freemind.sh")
+    "../../freemind/freemind.sh")
   freemind_proc = subprocess.Popen(
     ['sh', freemind_sh_path, mindmap_file_loc],
     stdout=freemind_log_file, stderr=freemind_log_file)

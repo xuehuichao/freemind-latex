@@ -41,6 +41,13 @@ gflags.DEFINE_integer(
   None,
   "Port to listen to, for the compilation request. "
   "When not set, will pick a random port.")
+gflags.DEFINE_string(
+  "dir",
+  "",
+  "Directory to run freemindlatex."
+)
+
+FLAGS = gflags.FLAGS
 
 
 class UserExitedEditingEnvironment(Exception):
@@ -94,18 +101,18 @@ def RunEditingEnvironment(directory, server_address):
       'slides.pdf'),
     viewer_log_file)
 
-  freemind_sh_path = os.path.join(
-    os.path.dirname(
-      os.path.realpath(sys.modules[__name__].__file__)),
-    "../../freemind/freemind.sh")
+  freemind_sh_path = os.path.realpath(
+    os.path.join(
+      os.path.dirname(sys.modules[__name__].__file__),
+      "../../freemind/freemind.sh"))
   freemind_proc = subprocess.Popen(
     ['sh', freemind_sh_path, mindmap_file_loc],
-    stdout=freemind_log_file, stderr=freemind_log_file)
+    stdout=freemind_log_file, stderr=freemind_log_file, cwd=directory)
 
   mtime_list = compilation_client_lib.GetMTimeListForDir(directory)
   try:
     while True:
-      time.sleep(gflags.FLAGS.seconds_between_rechecking)
+      time.sleep(FLAGS.seconds_between_rechecking)
       if freemind_proc.poll() is not None or viewer_proc.poll() is not None:
         raise UserExitedEditingEnvironment
 
@@ -135,19 +142,19 @@ def RunEditingEnvironment(directory, server_address):
 
 
 def main():
-  argv = gflags.FLAGS(sys.argv)
+  argv = FLAGS(sys.argv)
   logging.basicConfig(
     level=logging.INFO,
     format='%(levelname)s: %(threadName)s %(message)s')
 
-  directory = os.getcwd()
+  directory = FLAGS.dir or os.getcwd()
 
   if argv[1:] == ['server']:
-    port = gflags.FLAGS.port or portpicker.pick_unused_port()
+    port = FLAGS.port or portpicker.pick_unused_port()
     compilation_server_lib.RunServerAtPort(port)
 
   elif argv[1:] == ['local']:
-    port = gflags.FLAGS.port or portpicker.pick_unused_port()
+    port = FLAGS.port or portpicker.pick_unused_port()
     server_proc = subprocess.Popen(
       ["python", argv[0], "--port", str(port), "server"])
     server_address = '127.0.0.1:{}'.format(port)
@@ -164,11 +171,11 @@ def main():
         pass
 
   elif argv[1:] == []:
-    if not gflags.FLAGS.using_server:
+    if not FLAGS.using_server:
       logging.fatal(
         "Please specify the server address when running in the client mode "
         "via --using_server")
-    RunEditingEnvironment(directory, server_address=gflags.FLAGS.using_server)
+    RunEditingEnvironment(directory, server_address=FLAGS.using_server)
 
   else:
     print "Unable to recognize command %r" % argv

@@ -939,9 +939,23 @@ def PrintTopLevel(current_node):
     DirectlyPrintSub(current_node)(writer, print_format='beamer_latex')
 
   def PrintInLatexFormat(writer):
-    writer.write(r"\chapter{")
-    writer.write(current_node.GetText())
-    writer.write("}\n")
+    cur_text_lines = current_node.GetText().split("\n")
+    title = cur_text_lines[0]
+    subtitle = ""
+    author = ""
+    if len(cur_text_lines) >= 2:
+      subtitle = cur_text_lines[1]
+    if len(cur_text_lines) >= 3:
+      author = cur_text_lines[2]
+
+    writer.write(r"""
+    \title{%s}
+    \date{%s}
+    \author{%s}
+
+    \maketitle
+    """ % (title, subtitle, author))
+
     DirectlyPrintSub(current_node)(writer, print_format='latex')
 
   def PrintInHTMLFormat(writer):

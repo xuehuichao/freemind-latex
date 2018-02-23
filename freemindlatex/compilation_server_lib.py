@@ -42,7 +42,16 @@ def _MkdirP(directory):
       raise
 
 
-def _CompileLatexAtDir(working_dir):
+def _GetLatexMainFileBasename(compilation_mode):
+  if compilation_mode == compilation_service_pb2.LatexCompilationRequest.BEAMER:
+    return 'slides'
+  elif compilation_mode == compilation_service_pb2.LatexCompilationRequest.REPORT:
+    return 'report'
+  else:
+    raise ValueError
+
+
+def _CompileLatexAtDir(working_dir, compilation_mode):
   """Runs pdflatex at the working directory.
 
   Args:
@@ -54,9 +63,10 @@ def _CompileLatexAtDir(working_dir):
     compilation_service_pb2.LatexCompilationResponse.SUCCESS
     or compilation_service_pb2.LatexCompilationResponse.ERROR
   """
+  basename = _GetLatexMainFileBasename(compilation_mode)
   proc = subprocess.Popen(
     ["pdflatex", "-interaction=nonstopmode",
-     "{}.tex".format(_LATEX_MAIN_FILE_BASENAME)], cwd=working_dir,
+     "{}.tex".format(basename)], cwd=working_dir,
     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, _ = proc.communicate()
   return_code = proc.returncode
@@ -74,7 +84,7 @@ def _CompileLatexAtDir(working_dir):
   if return_code == 0:
     result.pdf_content = open(
       os.path.join(working_dir, "{}.pdf".format(
-        _LATEX_MAIN_FILE_BASENAME))).read()
+        basename))).read()
 
   return result
 
@@ -147,7 +157,7 @@ def _ParseNodeIdAndErrorMessageMapping(
   return result
 
 
-def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
+def _LatexCompileOrTryEmbedErrorMessage(org, work_dir, compilation_mode):
   """Try compiling. If fails, try embedding error messages into the frame.
 
   Args:
@@ -159,10 +169,15 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
     A compilation_service_pb2.LatexCompilationResponse object.
   """
   output_tex_file_loc = os.path.join(work_dir, "mindmap.tex")
-  org.OutputToBeamerLatex(output_tex_file_loc)
+  if compilation_mode == compilation_service_pb2.LatexCompilationRequest.BEAMER:
+    org.OutputToBeamerLatex(output_tex_file_loc)
+  elif compilation_mode == compilation_service_pb2.LatexCompilationRequest.REPORT:
+    org.OutputToLatex(output_tex_file_loc)
+  else:
+    raise ValueError
 
   # First attempt
-  result = _CompileLatexAtDir(work_dir)
+  result = _CompileLatexAtDir(work_dir, compilation_mode)
 
   if result.status == compilation_service_pb2.LatexCompilationResponse.SUCCESS:
     return result
@@ -181,7 +196,7 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir):
   org.LabelErrorsOnFrames(frame_and_error_message_map)
   org.OutputToBeamerLatex(output_tex_file_loc)
 
-  second_attempt_result = _CompileLatexAtDir(work_dir)
+  second_attempt_result = _CompileLatexAtDir(work_dir, compilation_mode)
   if (second_attempt_result.status ==
       compilation_service_pb2.LatexCompilationResponse.SUCCESS):
     result.status = compilation_service_pb2.LatexCompilationResponse.EMBEDDED
@@ -244,7 +259,7 @@ class CompilationServer(compilation_service_pb2_grpc.LatexCompilationServicer):
         'utf8').read())
 
     initial_compilation_result = _LatexCompileOrTryEmbedErrorMessage(
-      org, work_dir)
+      org, work_dir, request.compilation_mode)
     if (initial_compilation_result.status ==
         compilation_service_pb2.LatexCompilationResponse.CANNOTFIX):
       return initial_compilation_result
@@ -253,8 +268,9 @@ class CompilationServer(compilation_service_pb2_grpc.LatexCompilationServicer):
       _CompileBibtexAtDir(work_dir)
     except BibtexCompilationError as _:
       pass
-    _CompileLatexAtDir(work_dir)
-    final_compilation_result = _CompileLatexAtDir(work_dir)
+    _CompileLatexAtDir(work_dir, request.compilation_mode)
+    final_compilation_result = _CompileLatexAtDir(
+      work_dir, request.compilation_mode)
 
     result = initial_compilation_result
     result.pdf_content = final_compilation_result.pdf_content

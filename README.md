@@ -11,6 +11,7 @@ Go to an empty directory and start editing it
 ```sh
 cd /path/to/your/document/directory
 python /path/to/freemind-latex.zip
+python /path/to/freemind-latex.zip --mode report local  # when writing reports
 ```
 
 It will bring up freemind for editing, evince for slides preview, and keep monitoring the file changes. While you edit the mindmap, slides content will refresh.

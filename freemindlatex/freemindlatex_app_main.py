@@ -98,7 +98,7 @@ def RunEditingEnvironment(directory, server_address):
   viewer_proc = _LaunchViewerProcess(
     os.path.join(
       directory,
-      'slides.pdf'),
+      (gflags.FLAGS.mode == 'beamer') and 'slides.pdf' or 'report.pdf'),
     viewer_log_file)
 
   freemind_sh_path = os.path.realpath(

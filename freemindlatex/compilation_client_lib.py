@@ -17,6 +17,10 @@ gflags.DEFINE_integer(
   "Number of health check retries before giving up.")
 gflags.DEFINE_string("latex_error_log_filename", "latex.log",
                      "Log file for latex compilation errors.")
+gflags.DEFINE_string(
+  "mode",
+  "beamer",
+  "Compiling mode: beamer, HTML or report")
 
 
 def _GetMTime(filename):
@@ -86,7 +90,6 @@ class LatexCompilationClient(object):
       directory: directory where user's files locate
     """
 
-    target_pdf_loc = os.path.join(directory, 'slides.pdf')
     filename_and_mtime_list = GetMTimeListForDir(directory)
     compilation_request = compilation_service_pb2.LatexCompilationRequest()
     for filename, _ in filename_and_mtime_list:
@@ -94,6 +97,14 @@ class LatexCompilationClient(object):
         new_file_info = compilation_request.file_infos.add()
         new_file_info.filepath = filename
         new_file_info.content = infile.read()
+    if gflags.FLAGS.mode == 'beamer':
+      compilation_request.compilation_mode = (
+        compilation_service_pb2.LatexCompilationRequest.BEAMER)
+      target_pdf_loc = os.path.join(directory, 'slides.pdf')
+    elif gflags.FLAGS.mode == 'report':
+      compilation_request.compilation_mode = (
+        compilation_service_pb2.LatexCompilationRequest.REPORT)
+      target_pdf_loc = os.path.join(directory, 'report.pdf')
 
     response = self._compilation_stub.CompilePackage(compilation_request)
     if response.pdf_content:

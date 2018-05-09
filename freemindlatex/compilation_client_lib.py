@@ -104,7 +104,8 @@ class LatexCompilationClient(object):
       latex_log_file = os.path.join(
         directory, gflags.FLAGS.latex_error_log_filename)
       with open(latex_log_file, 'w') as ofile:
-        ofile.write(response.compilation_log)
+        ofile.write(
+          response.compilation_log.encode('ascii', 'ignore'))
 
     return (response.status ==
             compilation_service_pb2.LatexCompilationResponse.SUCCESS)

@@ -1,3 +1,6 @@
+"""Converting mindmap files into latex.
+"""
+
 import codecs
 import logging
 import os
@@ -18,7 +21,14 @@ gflags.DEFINE_string('bib_file', '~/Dropbox/bib.bib',
                      'bib file location')
 
 
+# TODO: pull this into a separate file, called something like bib_lib.
 class BibDatabase(object):
+  """Looking up the citation information.
+
+  This class parses a bibtex file, and stores the citation information
+  into a key-value mapping. We use this to visualize the citations for
+  the HTML rendering mode.
+  """
 
   def __init__(self, bib_file_location=None):
     if bib_file_location is None:
@@ -31,19 +41,33 @@ class BibDatabase(object):
     for ent in bp.get_entry_list():
       self.entry_map[ent['id']] = ent
 
+  # TODO: Remove the references to this. This makes no point.
   def _RetrieveEntry(self, name):
     return self.entry_map[name]
 
   db = None
 
+  # TODO: remove this singleton setup. Singleton generally makes it
+  # harder to test. Pass this as an argument.
   @staticmethod
   def GetTheDB():
     if BibDatabase.db is None:
       BibDatabase.db = BibDatabase()
     return BibDatabase.db
 
+  # TODO: Add unittests for this function
   @staticmethod
   def GetFormattedAuthor(bib_authorname):
+    """Getting the HTML text for bibtex name.
+
+    Args:
+      bib_authorname: the author name in bibtex, e.g. "Xue, Huichao", or
+        "Xue, Huichao and "Hwa, Rebecca".
+
+    Returns:
+      The name to show in HTML. For a list of names with <= 2 authors,
+      we just show their lastnames; otherwise, we use the "et. al" format.
+    """
     names = bib_authorname.split(' and ')
     first_author_lastname = names[0].split(',')[0]
     if len(names) == 1:
@@ -56,7 +80,17 @@ class BibDatabase(object):
     return "%s and %s" % (first_author_lastname,
                           second_author_lastname)
 
+  # TODO: move this as a private helper funciton.
   def GetOneArtCiteHTML(self, name):
+    """HTML code for one article in \cite{}.
+
+    Args:
+      name: the bibtex name that shows up in \cite{}.
+
+    Returns:
+      The HTML code that shows the name, and shows the full citation info
+      when hovered.
+    """
     try:
       ent = self._RetrieveEntry(name)
     except KeyError as _:
@@ -66,6 +100,7 @@ class BibDatabase(object):
       self.GetFormattedAuthor(ent['author']),
       ent['year'])
 
+  # TODO: There are similarities between this and above. Try to merge them.
   def GetOneArtNewciteHTML(self, name):
     try:
       ent = self._RetrieveEntry(name)
@@ -76,15 +111,42 @@ class BibDatabase(object):
       self.GetFormattedAuthor(ent['author']),
       ent['year'])
 
+  # TODO: rename "name" into something that represents comma-separated list.
   def GetCiteHTML(self, name):
+    """Getting HTML code for names mentioned in \cite{}.
+
+    Args:
+      name: the comma-separated bibtex name list.
+
+    Returns:
+      The HTML code that have names, and reveals full citation info
+      when hovered.
+    """
     return '(%s)' % (
       "; ".join(self.GetOneArtCiteHTML(x) for x in name.split(',')))
 
+  # TODO: Try to merge this method with the one above.
   def GetNewciteHTML(self, name):
+    """Getting HTML code for names mentioned in \newcite{}.
+
+    The difference between \cite and \newcite is whether we want to
+    refer the article as a reference, or an entity. For example:
+    (1) \cite: Scientific studies have shown blablabla (Xue et. al.)
+    (2) \newcite: Xue et. al. have shown blablabla.
+
+    Args:
+      name: the comma-separated bibtex name list.
+
+    Returns:
+      The HTML code that have names, and reveals full citation info
+      when hovered.
+    """
     return ", ".join(self.GetOneArtNewciteHTML(x) for x in name.split(','))
 
 
 class Node(object):
+  """Tree structure representing a document/section/paragraph/sentence etc.
+  """
   accepted_nodes = ['node', 'richcontent']
 
   def __init__(self, dom_node, level=0):
@@ -951,6 +1013,8 @@ def PrintTopLevel(current_node):
     DirectlyPrintSub(current_node)(writer)
   return PrintTo
 
+
+# TODO: Pull the main function into a separate file.
 
 def main():
   try:

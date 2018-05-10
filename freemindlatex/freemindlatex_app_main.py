@@ -26,6 +26,7 @@ import portpicker
 from freemindlatex import (
   compilation_client_lib,
   compilation_server_lib,
+  compilation_service_pb2,
   init_dir_lib)
 
 
@@ -46,8 +47,18 @@ gflags.DEFINE_string(
   "",
   "Directory to run freemindlatex."
 )
+gflags.DEFINE_string(
+  "mode",
+  "beamer",
+  "Compiling mode: beamer, HTML or report")
+
 
 FLAGS = gflags.FLAGS
+
+_COMPILATION_MODE_MAP = {
+  'beamer': compilation_service_pb2.LatexCompilationRequest.BEAMER,
+  'report': compilation_service_pb2.LatexCompilationRequest.REPORT,
+}
 
 
 class UserExitedEditingEnvironment(Exception):
@@ -81,14 +92,15 @@ def RunEditingEnvironment(directory, server_address):
     server_address: address of latex compilation server,
       e.g. http://127.0.0.1:8000
   """
+  compilation_mode = _COMPILATION_MODE_MAP[gflags.FLAGS.mode]
   mindmap_file_loc = os.path.join(directory, 'mindmap.mm')
   if not os.path.exists(mindmap_file_loc):
     logging.info("Empty directory... Initializing it")
-    init_dir_lib.InitDir(directory)
+    init_dir_lib.InitDir(directory, compilation_mode)
 
   latex_client = compilation_client_lib.LatexCompilationClient(server_address)
 
-  latex_client.CompileDir(directory)
+  latex_client.CompileDir(directory, compilation_mode)
   freemind_log_path = os.path.join(directory, 'freemind.log')
   freemind_log_file = open(freemind_log_path, 'w')
 

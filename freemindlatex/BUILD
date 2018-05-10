@@ -63,6 +63,7 @@ py_binary(
     deps = [
         ":compilation_client_lib",
         ":compilation_server_lib",
+        ":compilation_service_proto_lib",
         ":init_dir_lib",
         requirement("six"),
         requirement("portpicker"),
@@ -83,6 +84,7 @@ py_test(
     deps = [
         ":init_dir_lib",
         ":integration_test_lib",
+	":compilation_service_proto_lib",
         requirement("pypdf2"),
         requirement("timeout-decorator"),
     ],

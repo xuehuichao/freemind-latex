@@ -17,10 +17,6 @@ gflags.DEFINE_integer(
   "Number of health check retries before giving up.")
 gflags.DEFINE_string("latex_error_log_filename", "latex.log",
                      "Log file for latex compilation errors.")
-gflags.DEFINE_string(
-  "mode",
-  "beamer",
-  "Compiling mode: beamer, HTML or report")
 
 
 def _GetMTime(filename):
@@ -75,7 +71,7 @@ class LatexCompilationClient(object):
     return (response.status ==
             compilation_service_pb2.HealthCheckResponse.SERVING)
 
-  def CompileDir(self, directory):
+  def CompileDir(self, directory, mode):
     """Compiles the files in user's directory, and update the pdf file.
 
     The function will prepare the directory content, send it over for
@@ -83,11 +79,13 @@ class LatexCompilationClient(object):
     the latex error log at latex.log (or anything else specified by
     latex_error_log_filename).
 
-    Returns: boolean indicating if the compilation was successful.
-      When unceccessful, leaves log files.
-
     Args:
       directory: directory where user's files locate
+      mode: the way to compile,
+        e.g. compilation_service_pb2.LatexCompilationRequest.BEAMER
+
+    Returns: boolean indicating if the compilation was successful.
+      When unceccessful, leaves log files.
     """
 
     filename_and_mtime_list = GetMTimeListForDir(directory)
@@ -97,13 +95,10 @@ class LatexCompilationClient(object):
         new_file_info = compilation_request.file_infos.add()
         new_file_info.filepath = filename
         new_file_info.content = infile.read()
-    if gflags.FLAGS.mode == 'beamer':
-      compilation_request.compilation_mode = (
-        compilation_service_pb2.LatexCompilationRequest.BEAMER)
+    compilation_request.compilation_mode = mode
+    if mode == compilation_service_pb2.LatexCompilationRequest.BEAMER:
       target_pdf_loc = os.path.join(directory, 'slides.pdf')
-    elif gflags.FLAGS.mode == 'report':
-      compilation_request.compilation_mode = (
-        compilation_service_pb2.LatexCompilationRequest.REPORT)
+    elif mode == compilation_service_pb2.LatexCompilationRequest.REPORT:
       target_pdf_loc = os.path.join(directory, 'report.pdf')
 
     response = self._compilation_stub.CompilePackage(compilation_request)

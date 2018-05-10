@@ -1,4 +1,8 @@
-\documentclass[CJK]{article}
+\documentclass[CJK,12pt]{article}
+\usepackage[margin=1in]{geometry}% Change the margins here if you wish.
+\setlength{\parindent}{0pt} % This is the set the indent length for new paragraphs, change if you want.
+\setlength{\parskip}{5pt} % This sets the distance between paragraphs, which will be used anytime you have a blank line in your LaTeX code
+
 \usepackage[utf8x]{inputenc}
 \usepackage{CJK}
 \usepackage{verbatim}
@@ -14,7 +18,7 @@
 %\renewcommand{\cite}[1]{\citep{#1}}
 \newcommand{\newcite}[1]{\cite{#1}}
 %\newcommand{\shortcite}[1]{\citet{#1}}
-\usepackage{amsmath}
+\usepackage{amsmath,amsthm,amssymb}
 \usepackage{centernot}
 \usepackage{xcolor}
 \definecolor{olive}{rgb}{0.3, 0.4, .1}

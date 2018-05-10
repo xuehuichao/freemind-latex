@@ -107,10 +107,13 @@ def RunEditingEnvironment(directory, server_address):
   viewer_log_path = os.path.join(directory, 'viewer.log')
   viewer_log_file = open(viewer_log_path, 'w')
 
+  compiled_doc_path = (
+    compilation_client_lib.LatexCompilationClient.GetCompiledDocPath(directory))
   viewer_proc = _LaunchViewerProcess(
     os.path.join(
       directory,
-      (gflags.FLAGS.mode == 'beamer') and 'slides.pdf' or 'report.pdf'),
+      compiled_doc_path
+    ),
     viewer_log_file)
 
   freemind_sh_path = os.path.realpath(

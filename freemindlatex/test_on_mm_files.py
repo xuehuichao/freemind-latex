@@ -19,13 +19,15 @@ class TestBasicUsecase(
 
   def testCompilingInitialDirectory(self):
     """In a new directory, we will prepare an empty content to start with."""
+    doc_dir = os.path.join(self._test_dir, 'test_slides')
+    os.mkdir(doc_dir)
     mode = compilation_service_pb2.LatexCompilationRequest.BEAMER
-    init_dir_lib.InitDir(self._test_dir, mode)
+    init_dir_lib.InitDir(doc_dir, mode)
     # Compilation successful
     self.assertTrue(
-      self._compilation_client.CompileDir(self._test_dir, mode))
+      self._compilation_client.CompileDir(doc_dir, mode))
 
-    slides_file_loc = os.path.join(self._test_dir, "slides.pdf")
+    slides_file_loc = os.path.join(doc_dir, "test_slides.pdf")
     self.assertTrue(os.path.exists(slides_file_loc))
     pdf_file = PyPDF2.PdfFileReader(open(slides_file_loc, "rb"))
     self.assertEquals(4, pdf_file.getNumPages())
@@ -35,18 +37,15 @@ class TestBasicUsecase(
   def testCompilingReports(self):
     """When compiling in the report mode, renders report.pdf
     """
+    doc_dir = os.path.join(self._test_dir, 'test_report')
+    os.mkdir(doc_dir)
     mode = compilation_service_pb2.LatexCompilationRequest.REPORT
-    init_dir_lib.InitDir(
-      self._test_dir,
-      compilation_service_pb2.LatexCompilationRequest.REPORT
-    )
+    init_dir_lib.InitDir(doc_dir, mode)
     self.assertTrue(
-      self._compilation_client.CompileDir(
-        self._test_dir,
-        compilation_service_pb2.LatexCompilationRequest.REPORT)
+      self._compilation_client.CompileDir(doc_dir, mode)
     )
 
-    report_file_loc = os.path.join(self._test_dir, "report.pdf")
+    report_file_loc = os.path.join(doc_dir, "test_report.pdf")
     self.assertTrue(os.path.exists(report_file_loc))
 
     pdf_file = PyPDF2.PdfFileReader(open(report_file_loc, "rb"))
@@ -57,8 +56,7 @@ class TestBasicUsecase(
 class TestHandlingErrors(
     integration_test_lib.ClientServerIntegrationTestFixture):
 
-  def _AssertErrorOnSecondPage(self, error_msg):
-    slides_file_loc = os.path.join(self._test_dir, "slides.pdf")
+  def _AssertErrorOnSecondPage(self, slides_file_loc, error_msg):
     self.assertTrue(os.path.exists(slides_file_loc))
     pdf_file = PyPDF2.PdfFileReader(open(slides_file_loc, "rb"))
 
@@ -80,43 +78,53 @@ class TestHandlingErrors(
   def testOnMissingDollarSign(self):
     """Missing dollar sign causes Latex to error."""
     mode = compilation_service_pb2.LatexCompilationRequest.BEAMER
-    init_dir_lib.InitDir(self._test_dir, mode)
+    doc_dir = os.path.join(self._test_dir, 'test_slides')
+    os.mkdir(doc_dir)
+    init_dir_lib.InitDir(doc_dir, mode)
     shutil.copy(os.path.join(
       os.environ["TEST_SRCDIR"],
       "__main__/freemindlatex/test_data/additional_dollar.mm"),
-      os.path.join(self._test_dir, "mindmap.mm"))
-    print os.path.join(self._test_dir, "mindmap.mm")
+      os.path.join(doc_dir, "mindmap.mm"))
 
-    self.assertFalse(self._compilation_client.CompileDir(self._test_dir, mode))
+    self.assertFalse(self._compilation_client.CompileDir(doc_dir, mode))
     self.assertIn(
       "Missing $ inserted",
       open(
         os.path.join(
-          self._test_dir,
+          doc_dir,
           "latex.log")).read())
 
-    self._AssertErrorOnSecondPage("Missing $ inserted")
+    self._AssertErrorOnSecondPage(
+      os.path.join(doc_dir, "test_slides.pdf"),
+      "Missing $ inserted")
 
   @timeout_decorator.timeout(5)
   def testOnFourLayersOfNestedEnums(self):
     """Latex does not support multi-layered enums.
     """
+    doc_dir = os.path.join(self._test_dir, 'test_slides')
+    os.mkdir(doc_dir)
     mode = compilation_service_pb2.LatexCompilationRequest.BEAMER
-    init_dir_lib.InitDir(self._test_dir, mode)
+    init_dir_lib.InitDir(doc_dir, mode)
     shutil.copy(
       os.path.join(
         os.environ["TEST_SRCDIR"],
         "__main__/freemindlatex/test_data/multi_layered_enums.mm"),
-      os.path.join(self._test_dir, "mindmap.mm"))
-    self.assertFalse(self._compilation_client.CompileDir(self._test_dir, mode))
+      os.path.join(doc_dir, "mindmap.mm"))
+    self.assertFalse(
+      self._compilation_client.CompileDir(doc_dir, mode))
     self.assertIn(
       "Too deeply nested",
       open(
         os.path.join(
-          self._test_dir,
+          doc_dir,
           "latex.log")).read())
 
-    self._AssertErrorOnSecondPage("Too deeply nested")
+    self._AssertErrorOnSecondPage(
+      os.path.join(
+        doc_dir,
+        "test_slides.pdf"),
+      "Too deeply nested")
 
 
 if __name__ == "__main__":

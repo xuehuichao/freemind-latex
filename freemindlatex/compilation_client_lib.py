@@ -71,6 +71,20 @@ class LatexCompilationClient(object):
     return (response.status ==
             compilation_service_pb2.HealthCheckResponse.SERVING)
 
+  @staticmethod
+  def GetCompiledDocPath(directory):
+    """Get path to the compiled PDF file.
+
+    Args:
+      directory: The directory where the compilations happend.
+        e.g. /tmp/testdir
+
+    Returns:
+      The file name of the output document, e.g. /tmp/testdir/testdir.pdf
+    """
+    return os.path.join(
+      directory, "{}.pdf".format(os.path.basename(directory)))
+
   def CompileDir(self, directory, mode):
     """Compiles the files in user's directory, and update the pdf file.
 
@@ -96,10 +110,7 @@ class LatexCompilationClient(object):
         new_file_info.filepath = filename
         new_file_info.content = infile.read()
     compilation_request.compilation_mode = mode
-    if mode == compilation_service_pb2.LatexCompilationRequest.BEAMER:
-      target_pdf_loc = os.path.join(directory, 'slides.pdf')
-    elif mode == compilation_service_pb2.LatexCompilationRequest.REPORT:
-      target_pdf_loc = os.path.join(directory, 'report.pdf')
+    target_pdf_loc = self.GetCompiledDocPath(directory)
 
     response = self._compilation_stub.CompilePackage(compilation_request)
     if response.pdf_content:

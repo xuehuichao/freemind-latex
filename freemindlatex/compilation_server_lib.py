@@ -16,7 +16,10 @@ from freemindlatex import (
   compilation_service_pb2_grpc,
   convert_lib)
 
-_LATEX_MAIN_FILE_BASENAME = "slides"
+_LATEX_MAIN_FILE_BASENAME_MAP = {
+  compilation_service_pb2.LatexCompilationRequest.BEAMER: 'slides',
+  compilation_service_pb2.LatexCompilationRequest.REPORT: 'report'
+}
 _LATEX_CONTENT_TEX_FILE_NAME = "mindmap.tex"
 
 
@@ -42,28 +45,21 @@ def _MkdirP(directory):
       raise
 
 
-def _GetLatexMainFileBasename(compilation_mode):
-  if compilation_mode == compilation_service_pb2.LatexCompilationRequest.BEAMER:
-    return 'slides'
-  elif compilation_mode == compilation_service_pb2.LatexCompilationRequest.REPORT:
-    return 'report'
-  else:
-    raise ValueError
-
-
 def _CompileLatexAtDir(working_dir, compilation_mode):
   """Runs pdflatex at the working directory.
 
   Args:
     working_dir: the working directory of the freemindlatex compilation process.
       Normally a temporary directory (e.g. /tmp/123).
+    compilation_mode:
+      e.g. compilation_service_pb2.LatexCompilationRequest.BEAMER or REPORT
 
   Returns:
     A compilation_service_pb2.LatexCompilationResponse, whose status is either
     compilation_service_pb2.LatexCompilationResponse.SUCCESS
     or compilation_service_pb2.LatexCompilationResponse.ERROR
   """
-  basename = _GetLatexMainFileBasename(compilation_mode)
+  basename = _LATEX_MAIN_FILE_BASENAME_MAP[compilation_mode]
   proc = subprocess.Popen(
     ["pdflatex", "-interaction=nonstopmode",
      "{}.tex".format(basename)], cwd=working_dir,
@@ -93,12 +89,14 @@ class BibtexCompilationError(Exception):
   pass
 
 
-def _CompileBibtexAtDir(working_dir):
+def _CompileBibtexAtDir(working_dir, compilation_mode):
   """Runs bibtex at the working directory.
 
   Args:
     working_dir: the working directory of the freemindlatex project,
       e.g. /tmp/123
+    compilation_mode:
+      e.g. compilation_service_pb2.LatexCompilationRequest.BEAMER or REPORT
 
   Raises:
     BibtexCompilationError: when bibtex compilation encounters some errors
@@ -106,7 +104,8 @@ def _CompileBibtexAtDir(working_dir):
   """
   proc = subprocess.Popen(
     ["bibtex",
-     _LATEX_MAIN_FILE_BASENAME], cwd=working_dir, stdout=subprocess.PIPE,
+     _LATEX_MAIN_FILE_BASENAME_MAP[compilation_mode]],
+    cwd=working_dir, stdout=subprocess.PIPE,
     stderr=subprocess.PIPE)
   stdout, _ = proc.communicate()
   if proc.returncode != 0:
@@ -171,7 +170,8 @@ def _LatexCompileOrTryEmbedErrorMessage(org, work_dir, compilation_mode):
   output_tex_file_loc = os.path.join(work_dir, "mindmap.tex")
   if compilation_mode == compilation_service_pb2.LatexCompilationRequest.BEAMER:
     org.OutputToBeamerLatex(output_tex_file_loc)
-  elif compilation_mode == compilation_service_pb2.LatexCompilationRequest.REPORT:
+  elif (compilation_mode ==
+        compilation_service_pb2.LatexCompilationRequest.REPORT):
     org.OutputToLatex(output_tex_file_loc)
   else:
     raise ValueError
@@ -265,7 +265,7 @@ class CompilationServer(compilation_service_pb2_grpc.LatexCompilationServicer):
       return initial_compilation_result
 
     try:
-      _CompileBibtexAtDir(work_dir)
+      _CompileBibtexAtDir(work_dir, request.compilation_mode)
     except BibtexCompilationError as _:
       pass
     _CompileLatexAtDir(work_dir, request.compilation_mode)

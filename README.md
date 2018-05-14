@@ -10,8 +10,7 @@ This tool converts a mindmap into PDF slides (via LaTeX beamer). You can write [
 Go to an empty directory and start editing it
 ```sh
 cd /path/to/your/document/directory
-python /path/to/freemind-latex.zip
-python /path/to/freemind-latex.zip --mode report local  # when writing reports
+freemindlatex
 ```
 
 It will bring up freemind for editing, evince for slides preview, and keep monitoring the file changes. While you edit the mindmap, slides content will refresh.
@@ -35,12 +34,17 @@ With freemindlatex, we ask you to just focus on the logic.
 
 ## Installation
 
-The software is packaged into a zip file.
+The software is packaged into a zip file. It definitely supports Mac and linux. Haven't tested
+it on Windows, but it should work similarly.
 
-* On Ubuntu, you may directly download it following this [link](https://www.dropbox.com/s/rqxjr73o3rczos4/freemindlatex_app_main.zip?dl=0).
-* On Windows and MacOs, first install [bazel](https://www.dropbox.com/s/rqxjr73o3rczos4/freemindlatex_app_main.zip?dl=0), then `bazel build freemindlatex:freemindlatex_app_main --build_python_zip`, and you will get a zip file created in `bazel-bin/freemindlatex/freemindlatex_app_main.zip`.
+First install [bazel](https://www.dropbox.com/s/rqxjr73o3rczos4/freemindlatex_app_main.zip?dl=0)
 
-Before running, make sure you install evince, or skim as the PDF viewer:
+	curl -L https://github.com/xuehuichao/freemind-latex/archive/bazel.zip -o freemindlatex.zip
+	unzip freemindlatex.zip
+	cd freemindlatex
+	./install.sh --package_directory=/path/to/installed/Packages --bin_directory=/path/to/bin
+
+Also before running, make sure you install evince, or skim as the PDF viewer:
 
 1. Evince, for linux and Windows: https://wiki.gnome.org/Apps/Evince
 2. Skim, for MacOS: http://skim-app.sourceforge.net/
@@ -53,15 +57,10 @@ In this case, please make sure you have the full texlive (https://www.tug.org/te
 1. On MacOS: https://tug.org/mactex/
 2. On Ubuntu: `sudo apt-get install texlive-full`
 
-Then, instead of `python /path/to/freemind-latex.zip`, please run `python /path/to/freemind-latex.zip local` in your working directory.
+Then, instead of `freemindlatex`, please run `freemindlatex local` in your working directory.
 
 
 ## For development
-
-### Release
-```sh
-bazel build freemindlatex:freemindlatex_app_main --build_python_zip
-```
 
 ### Testing
 ```sh
@@ -72,4 +71,3 @@ bazel test ...
 ```sh
 find freemindlatex/ -name *.py |  xargs pylint --rcfile=.pylintrc
 ```
-

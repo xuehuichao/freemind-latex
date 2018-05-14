@@ -1,23 +1,29 @@
-/* To compile: run
-   python -m grpc.tools.protoc -Isrc/freemindlatex --python_out=src/freemindlatex --grpc_python_out=src/freemindlatex src/freemindlatex/compilation_service.proto
-  */
-
 syntax = "proto3";
 
 message LatexCompilationRequest {
   message FileInfo {
     string filepath = 1;
-    bytes content = 2; 
+    bytes content = 2;
   }
+
+  enum Mode {
+    BEAMER = 0;
+    REPORT = 1;
+    HTML = 2;
+  }
+
   repeated FileInfo file_infos = 1;
+  Mode compilation_mode = 2;
 }
 
 message LatexCompilationResponse {
   enum Status {
     ERROR = 0;
     SUCCESS = 1;
-    EMBEDDED = 2; 		// The attempt to fix it worked. Error messages are embedded into the compiled slides.
-    CANNOTFIX = 3;		// The attempt to fix it still failed.
+    EMBEDDED = 2;
+    // The attempt to fix it worked. Error messages are embedded into the compiled slides.
+    CANNOTFIX = 3;
+    // The attempt to fix it still failed.
   }
   Status status = 1;
   string source_code = 2;
@@ -26,7 +32,7 @@ message LatexCompilationResponse {
 }
 
 service LatexCompilation {
-  rpc CompilePackage(LatexCompilationRequest) returns (LatexCompilationResponse) {}
+  rpc CompilePackage(LatexCompilationRequest) returns(LatexCompilationResponse) {};
 }
 
 message HealthCheckRequest {
@@ -43,5 +49,5 @@ message HealthCheckResponse {
 }
 
 service Health {
-  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc Check(HealthCheckRequest) returns(HealthCheckResponse);
 }

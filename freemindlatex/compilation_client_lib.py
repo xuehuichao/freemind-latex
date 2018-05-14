@@ -71,7 +71,21 @@ class LatexCompilationClient(object):
     return (response.status ==
             compilation_service_pb2.HealthCheckResponse.SERVING)
 
-  def CompileDir(self, directory):
+  @staticmethod
+  def GetCompiledDocPath(directory):
+    """Get path to the compiled PDF file.
+
+    Args:
+      directory: The directory where the compilations happend.
+        e.g. /tmp/testdir
+
+    Returns:
+      The file name of the output document, e.g. /tmp/testdir/testdir.pdf
+    """
+    return os.path.join(
+      directory, "{}.pdf".format(os.path.basename(directory)))
+
+  def CompileDir(self, directory, mode):
     """Compiles the files in user's directory, and update the pdf file.
 
     The function will prepare the directory content, send it over for
@@ -79,14 +93,15 @@ class LatexCompilationClient(object):
     the latex error log at latex.log (or anything else specified by
     latex_error_log_filename).
 
-    Returns: boolean indicating if the compilation was successful.
-      When unceccessful, leaves log files.
-
     Args:
       directory: directory where user's files locate
+      mode: the way to compile,
+        e.g. compilation_service_pb2.LatexCompilationRequest.BEAMER
+
+    Returns: boolean indicating if the compilation was successful.
+      When unceccessful, leaves log files.
     """
 
-    target_pdf_loc = os.path.join(directory, 'slides.pdf')
     filename_and_mtime_list = GetMTimeListForDir(directory)
     compilation_request = compilation_service_pb2.LatexCompilationRequest()
     for filename, _ in filename_and_mtime_list:
@@ -94,6 +109,8 @@ class LatexCompilationClient(object):
         new_file_info = compilation_request.file_infos.add()
         new_file_info.filepath = filename
         new_file_info.content = infile.read()
+    compilation_request.compilation_mode = mode
+    target_pdf_loc = self.GetCompiledDocPath(directory)
 
     response = self._compilation_stub.CompilePackage(compilation_request)
     if response.pdf_content:

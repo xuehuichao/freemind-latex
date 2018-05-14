@@ -1,6 +1,7 @@
 new_http_archive(
   name="freemind",
-  url="http://versaweb.dl.sourceforge.net/project/freemind/freemind/1.0.0/freemind-bin-1.0.0.zip",
+  url="https://drive.google.com/uc?authuser=0&id=156V-M5V9Syf_hvo-ITpfNtU9Gnrp0tB0&export=download",
+  type='zip',
   sha256="c97b19bb9b021cc0987a85bf0fd8dffa127f02e7736cf7aaf9f86723305c9a7d",
   build_file="BUILD.freemind"
 )

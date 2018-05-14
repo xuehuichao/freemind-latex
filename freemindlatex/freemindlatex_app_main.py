@@ -135,7 +135,7 @@ def RunEditingEnvironment(directory, server_address):
       if new_mtime_list != mtime_list:
         time.sleep(0.5)         # Wait till files are fully written
         mtime_list = new_mtime_list
-        latex_client.CompileDir(directory)
+        latex_client.CompileDir(directory, compilation_mode)
 
   except KeyboardInterrupt as _:
     logging.info("User exiting with ctrl-c.")

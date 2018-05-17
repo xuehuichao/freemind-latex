@@ -58,6 +58,7 @@ FLAGS = gflags.FLAGS
 _COMPILATION_MODE_MAP = {
   'beamer': compilation_service_pb2.LatexCompilationRequest.BEAMER,
   'report': compilation_service_pb2.LatexCompilationRequest.REPORT,
+  'html': compilation_service_pb2.LatexCompilationRequest.HTML
 }
 
 
@@ -76,9 +77,15 @@ def _LaunchViewerProcess(filename, log_file):
   """
   launch_base_command = []
   if platform.system() == "Darwin":  # MacOSX
-    launch_base_command = ["open", "-W", "-a", "Skim"]
+    if filename.endswith('.html'):
+      launch_base_command = ["open"]
+    else:
+      launch_base_command = ["open", "-W", "-a", "Skim"]
   elif platform.system() == "Linux":
-    launch_base_command = ["evince"]
+    if filename.endswith('.html'):
+      launch_base_command = ["xdg-open"]
+    else:
+      launch_base_command = ["evince"]
 
   return subprocess.Popen(launch_base_command +
                           [filename], stdout=log_file, stderr=log_file)
@@ -108,7 +115,8 @@ def RunEditingEnvironment(directory, server_address):
   viewer_log_file = open(viewer_log_path, 'w')
 
   compiled_doc_path = (
-    compilation_client_lib.LatexCompilationClient.GetCompiledDocPath(directory))
+    compilation_client_lib.LatexCompilationClient.GetCompiledDocPath(
+      directory, compilation_mode))
   viewer_proc = _LaunchViewerProcess(
     os.path.join(
       directory,
@@ -128,7 +136,9 @@ def RunEditingEnvironment(directory, server_address):
   try:
     while True:
       time.sleep(FLAGS.seconds_between_rechecking)
-      if freemind_proc.poll() is not None or viewer_proc.poll() is not None:
+      if freemind_proc.poll() is not None or (
+          compilation_mode !=
+          compilation_service_pb2.LatexCompilationRequest.HTML and viewer_proc.poll() is not None):
         raise UserExitedEditingEnvironment
 
       new_mtime_list = compilation_client_lib.GetMTimeListForDir(directory)

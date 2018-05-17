@@ -72,7 +72,7 @@ class LatexCompilationClient(object):
             compilation_service_pb2.HealthCheckResponse.SERVING)
 
   @staticmethod
-  def GetCompiledDocPath(directory):
+  def GetCompiledDocPath(directory, compilation_mode):
     """Get path to the compiled PDF file.
 
     Args:
@@ -82,6 +82,9 @@ class LatexCompilationClient(object):
     Returns:
       The file name of the output document, e.g. /tmp/testdir/testdir.pdf
     """
+    if compilation_mode == compilation_service_pb2.LatexCompilationRequest.HTML:
+      return os.path.join(
+        directory, "{}.html".format(os.path.basename(directory)))
     return os.path.join(
       directory, "{}.pdf".format(os.path.basename(directory)))
 
@@ -110,7 +113,8 @@ class LatexCompilationClient(object):
         new_file_info.filepath = filename
         new_file_info.content = infile.read()
     compilation_request.compilation_mode = mode
-    target_pdf_loc = self.GetCompiledDocPath(directory)
+    target_pdf_loc = self.GetCompiledDocPath(
+      directory, compilation_request.compilation_mode)
 
     response = self._compilation_stub.CompilePackage(compilation_request)
     if response.pdf_content:

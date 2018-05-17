@@ -7,6 +7,7 @@ from freemindlatex import compilation_service_pb2
 _TEMPLATE_BASENAME_MAPPING = {
   compilation_service_pb2.LatexCompilationRequest.BEAMER: "slides.mm",
   compilation_service_pb2.LatexCompilationRequest.REPORT: "report.mm",
+  compilation_service_pb2.LatexCompilationRequest.HTML: "report.mm",
 }
 
 

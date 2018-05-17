@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import sys
+import StringIO
 from xml.dom import minidom
 
 import gflags
@@ -434,9 +435,9 @@ class Organization(object):
           OutputFrameAndDebugMessage(
             node, node_error_mapping[node.nodeid]))
 
-  def OutputToHTML(self, filename):
-    with codecs.open(filename, 'w', 'utf8') as outputfile:
-      print >> outputfile, """
+  def ToHTML(self):
+    output_stringio = StringIO.StringIO()
+    print >> output_stringio, """
 <meta charset="UTF-8">
 <style>
 span.citation {
@@ -475,7 +476,12 @@ function ToggleComments() {
 <button onclick="ToggleComments()">show/hide comments</button>
             """
 
-      self.doc.GetPrinter()(outputfile)
+    self.doc.GetPrinter()(output_stringio)
+    return output_stringio.getvalue()
+
+  def OutputToHTMLFile(self, filename):
+    with codecs.open(filename, 'w', 'utf8') as outputfile:
+      outputfile.write(self.ToHTML())
 
   def OutputToLatex(self, filename):
     with codecs.open(filename, 'w', 'utf8') as outputfile:
@@ -981,7 +987,7 @@ def main():
   org = Organization(
     codecs.open(gflags.FLAGS.mindmap_file, 'r', 'utf8').read())
   if gflags.FLAGS.html_file is not None:
-    org.OutputToHTML(gflags.FLAGS.html_file)
+    org.OutputToHTMLFile(gflags.FLAGS.html_file)
 
   if gflags.FLAGS.beamer_latex_file is not None:
     org.OutputToBeamerLatex(gflags.FLAGS.beamer_latex_file)

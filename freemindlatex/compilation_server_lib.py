@@ -258,6 +258,13 @@ class CompilationServer(compilation_service_pb2_grpc.LatexCompilationServicer):
         'r',
         'utf8').read())
 
+    if (request.compilation_mode ==
+        compilation_service_pb2.LatexCompilationRequest.HTML):
+      return compilation_service_pb2.LatexCompilationResponse(
+        status=compilation_service_pb2.LatexCompilationResponse.SUCCESS,
+        pdf_content=org.ToHTML().encode('utf8')
+      )
+
     initial_compilation_result = _LatexCompileOrTryEmbedErrorMessage(
       org, work_dir, request.compilation_mode)
     if (initial_compilation_result.status ==

@@ -11,10 +11,9 @@ import time
 from concurrent import futures
 
 import grpc
-from freemindlatex import (
-  compilation_service_pb2,
-  compilation_service_pb2_grpc,
-  convert_lib)
+
+from freemindlatex import (compilation_service_pb2,
+                           compilation_service_pb2_grpc, convert_lib)
 
 _LATEX_MAIN_FILE_BASENAME_MAP = {
   compilation_service_pb2.LatexCompilationRequest.BEAMER: 'slides',

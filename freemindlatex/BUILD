@@ -26,6 +26,7 @@ py_library(
     requirement("python-gflags"),
     ":compilation_service_proto_lib",
     requirement("grpcio"),
+    requirement("absl-py"),
   ],
 )
 
@@ -75,6 +76,7 @@ py_binary(
     ":init_dir_lib",
     requirement("six"),
     requirement("portpicker"),
+    requirement("absl-py"),
   ],
 )
 

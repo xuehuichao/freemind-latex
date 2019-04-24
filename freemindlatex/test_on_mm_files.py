@@ -2,15 +2,13 @@
 
 import os
 import shutil
-import unittest
 
 import PyPDF2
 import timeout_decorator
 
 import integration_test_lib
-
-from freemindlatex import init_dir_lib
-from freemindlatex import compilation_service_pb2
+from absl.testing import absltest
+from freemindlatex import compilation_service_pb2, init_dir_lib
 
 
 class TestBasicUsecase(
@@ -128,4 +126,4 @@ class TestHandlingErrors(
 
 
 if __name__ == "__main__":
-  unittest.main()
+  absltest.main()

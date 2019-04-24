@@ -14,46 +14,42 @@ Advanced usages:
     with a non-default server.
 """
 
-import logging
 import os
 import platform
 import subprocess
 import sys
 import time
 
-import gflags
 import portpicker
-from freemindlatex import (
-  compilation_client_lib,
-  compilation_server_lib,
-  compilation_service_pb2,
-  init_dir_lib)
 
+from absl import app, flags, logging
+from freemindlatex import (compilation_client_lib, compilation_server_lib,
+                           compilation_service_pb2, init_dir_lib)
 
-gflags.DEFINE_string(
+flags.DEFINE_string(
   "using_server",
   "sword.xuehuichao.com:8117",
   "The latex compilation server address, ip:port. When not specified, "
   "will start the server at an unused port.")
-gflags.DEFINE_integer("seconds_between_rechecking", 1,
-                      "Time between checking if files have changed.")
-gflags.DEFINE_integer(
+flags.DEFINE_integer("seconds_between_rechecking", 1,
+                     "Time between checking if files have changed.")
+flags.DEFINE_integer(
   "port",
   None,
   "Port to listen to, for the compilation request. "
   "When not set, will pick a random port.")
-gflags.DEFINE_string(
+flags.DEFINE_string(
   "dir",
   "",
   "Directory to run freemindlatex."
 )
-gflags.DEFINE_string(
+flags.DEFINE_string(
   "mode",
   "beamer",
   "Compiling mode: beamer, HTML or report")
 
 
-FLAGS = gflags.FLAGS
+FLAGS = flags.FLAGS
 
 _COMPILATION_MODE_MAP = {
   'beamer': compilation_service_pb2.LatexCompilationRequest.BEAMER,
@@ -92,13 +88,14 @@ def RunEditingEnvironment(directory, server_address):
     server_address: address of latex compilation server,
       e.g. http://127.0.0.1:8000
   """
-  compilation_mode = _COMPILATION_MODE_MAP[gflags.FLAGS.mode]
+  compilation_mode = _COMPILATION_MODE_MAP[flags.FLAGS.mode]
   mindmap_file_loc = os.path.join(directory, 'mindmap.mm')
   if not os.path.exists(mindmap_file_loc):
     logging.info("Empty directory... Initializing it")
     init_dir_lib.InitDir(directory, compilation_mode)
 
-  latex_client = compilation_client_lib.LatexCompilationClient(server_address)
+  latex_client = compilation_client_lib.LatexCompilationClient(
+    server_address)
 
   latex_client.CompileDir(directory, compilation_mode)
   freemind_log_path = os.path.join(directory, 'freemind.log')
@@ -131,7 +128,8 @@ def RunEditingEnvironment(directory, server_address):
       if freemind_proc.poll() is not None or viewer_proc.poll() is not None:
         raise UserExitedEditingEnvironment
 
-      new_mtime_list = compilation_client_lib.GetMTimeListForDir(directory)
+      new_mtime_list = compilation_client_lib.GetMTimeListForDir(
+        directory)
       if new_mtime_list != mtime_list:
         time.sleep(0.5)         # Wait till files are fully written
         mtime_list = new_mtime_list
@@ -156,12 +154,7 @@ def RunEditingEnvironment(directory, server_address):
       pass
 
 
-def main():
-  argv = FLAGS(sys.argv)
-  logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s: %(threadName)s %(message)s')
-
+def main(argv):
   directory = FLAGS.dir or os.getcwd()
 
   if argv[1:] == ['server']:
@@ -199,4 +192,4 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+  app.run(main)

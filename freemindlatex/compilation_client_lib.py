@@ -1,22 +1,22 @@
 """Client-side of the latex compilation service.
 """
 
-import logging
 import os
 import time
 
-import gflags
 import grpc
+
+from absl import flags, logging
 from freemindlatex import compilation_service_pb2, compilation_service_pb2_grpc
 
-gflags.DEFINE_string("watched_file_extensions", "mm,png,jpg",
-                     "Files extensions to watch for LaTeX compilation.")
-gflags.DEFINE_integer(
+flags.DEFINE_string("watched_file_extensions", "mm,png,jpg",
+                    "Files extensions to watch for LaTeX compilation.")
+flags.DEFINE_integer(
   "max_health_retries",
   5,
   "Number of health check retries before giving up.")
-gflags.DEFINE_string("latex_error_log_filename", "latex.log",
-                     "Log file for latex compilation errors.")
+flags.DEFINE_string("latex_error_log_filename", "latex.log",
+                    "Log file for latex compilation errors.")
 
 
 def _GetMTime(filename):
@@ -36,7 +36,7 @@ def GetMTimeListForDir(directory):
   """
   suffixes = [
     '.%s' %
-    i for i in gflags.FLAGS.watched_file_extensions.split(',')]
+    i for i in flags.FLAGS.watched_file_extensions.split(',')]
   mtime_list = []
   for dirpath, _, filenames in os.walk(directory):
     for filename in [f for f in filenames if any(
@@ -46,7 +46,7 @@ def GetMTimeListForDir(directory):
         (os.path.relpath(
           filepath,
           directory),
-          _GetMTime(filepath)))
+         _GetMTime(filepath)))
   return sorted(mtime_list)
 
 
@@ -119,7 +119,7 @@ class LatexCompilationClient(object):
     if (response.status !=
         compilation_service_pb2.LatexCompilationResponse.SUCCESS):
       latex_log_file = os.path.join(
-        directory, gflags.FLAGS.latex_error_log_filename)
+        directory, flags.FLAGS.latex_error_log_filename)
       with open(latex_log_file, 'w') as ofile:
         ofile.write(response.compilation_log)
 
@@ -132,7 +132,7 @@ def WaitTillHealthy(server_address):
   """
   client = LatexCompilationClient(server_address)
   retries = 0
-  while not client.CheckHealthy() and retries < gflags.FLAGS.max_health_retries:
+  while not client.CheckHealthy() and retries < flags.FLAGS.max_health_retries:
     retries += 1
     logging.info("Compilation server not healthy yet (%d's retry)", retries)
     time.sleep(1)

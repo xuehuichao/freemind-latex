@@ -1,5 +1,4 @@
 six
-python-gflags
 bibtexparser
 pypdf2
 timeout-decorator
@@ -11,3 +10,4 @@ grpcio
 protobuf
 pypdf2
 timeout-decorator
+absl-py

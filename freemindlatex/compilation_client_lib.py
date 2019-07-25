@@ -9,7 +9,7 @@ import grpc
 from absl import flags, logging
 from freemindlatex import compilation_service_pb2, compilation_service_pb2_grpc
 
-flags.DEFINE_string("watched_file_extensions", "mm,png,jpg",
+flags.DEFINE_string("watched_file_extensions", "mm,png,jpg,pdf",
                     "Files extensions to watch for LaTeX compilation.")
 flags.DEFINE_integer(
   "max_health_retries",
@@ -28,7 +28,7 @@ def _GetMTime(filename):
     return None
 
 
-def GetMTimeListForDir(directory):
+def GetMTimeListForDir(directory, excludes=[]):
   """Getting the modification time for all user files in a directory.
 
   Returns: a sorted list of pairs in form of ('file1', 1234567), where the paths
@@ -38,10 +38,14 @@ def GetMTimeListForDir(directory):
     '.%s' %
     i for i in flags.FLAGS.watched_file_extensions.split(',')]
   mtime_list = []
+  excludes = set(os.path.relpath(
+    name, directory) for name in excludes)
   for dirpath, _, filenames in os.walk(directory):
     for filename in [f for f in filenames if any(
         f.endswith(suf) for suf in suffixes)]:
       filepath = os.path.join(dirpath, filename)
+      if filepath in excludes:
+        continue
       mtime_list.append(
         (os.path.relpath(
           filepath,
@@ -101,8 +105,10 @@ class LatexCompilationClient(object):
     Returns: boolean indicating if the compilation was successful.
       When unceccessful, leaves log files.
     """
+    target_pdf_loc = self.GetCompiledDocPath(directory)
 
-    filename_and_mtime_list = GetMTimeListForDir(directory)
+    filename_and_mtime_list = GetMTimeListForDir(
+      directory, excludes=[target_pdf_loc])
     compilation_request = compilation_service_pb2.LatexCompilationRequest()
     for filename, _ in filename_and_mtime_list:
       with open(os.path.join(directory, filename)) as infile:
@@ -110,7 +116,6 @@ class LatexCompilationClient(object):
         new_file_info.filepath = filename
         new_file_info.content = infile.read()
     compilation_request.compilation_mode = mode
-    target_pdf_loc = self.GetCompiledDocPath(directory)
 
     response = self._compilation_stub.CompilePackage(compilation_request)
     if response.pdf_content:

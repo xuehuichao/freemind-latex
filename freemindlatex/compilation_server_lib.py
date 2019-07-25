@@ -249,6 +249,7 @@ class CompilationServer(compilation_service_pb2_grpc.LatexCompilationServicer):
         ofile.write(file_info.content)
 
     # Compile
+    convert_lib.working_dir = work_dir
     org = convert_lib.Organization(
       codecs.open(
         os.path.join(

@@ -308,6 +308,9 @@ class Node(object):
             and not self.IsGraphNodeDescription())
 
 
+working_dir = None
+
+
 class ImageNode(Node):
 
   def __init__(self, dom_node, level):
@@ -317,6 +320,10 @@ class ImageNode(Node):
     if gflags.FLAGS.use_absolute_paths_for_images:
       loc = os.path.abspath(os.path.join(
         os.path.dirname(gflags.FLAGS.mindmap_file), rel_loc))
+
+    try_pdf_path = re.match(r'(.*)\.[a-zA-Z]+', rel_loc).group(1) + '.pdf'
+    if os.path.exists(try_pdf_path):
+      loc = try_pdf_path
     self.img = loc
 
   def IsImageNode(self):

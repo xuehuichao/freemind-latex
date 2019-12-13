@@ -1,0 +1,3 @@
+#!/bin/bash
+export USE_BAZEL_VERSION=1.0.1
+exec python -c "$(curl -L -s https://raw.githubusercontent.com/bazelbuild/bazelisk/master/bazelisk.py)" "$@"

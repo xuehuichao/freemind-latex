@@ -10,7 +10,7 @@ This tool converts a mindmap into PDF slides (via LaTeX beamer). You can write [
 Go to an empty directory and start editing it
 ```sh
 cd /path/to/your/document/directory
-freemindlatex
+python /path/to/freemindlatex.zip
 ```
 
 It will bring up freemind for editing, evince for slides preview, and keep monitoring the file changes. While you edit the mindmap, slides content will refresh.
@@ -37,12 +37,7 @@ With freemindlatex, we ask you to just focus on the logic.
 The software is packaged into a zip file. It definitely supports Mac and linux. Haven't tested
 it on Windows, but it should work similarly.
 
-First install [bazel](https://www.dropbox.com/s/rqxjr73o3rczos4/freemindlatex_app_main.zip?dl=0)
-
-	curl -L https://github.com/xuehuichao/freemind-latex/archive/bazel.zip -o freemindlatex.zip
-	unzip freemindlatex.zip
-	cd freemindlatex
-	./install.sh --package_directory=/path/to/installed/Packages --bin_directory=/path/to/bin
+	bash -c "$(curl -L -s https://raw.githubusercontent.com/xuehuichao/freemind-latex/bazel/install.sh)" /path/to/target/file.zip
 
 Also before running, make sure you install evince, or skim as the PDF viewer:
 

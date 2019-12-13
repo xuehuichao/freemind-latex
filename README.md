@@ -34,25 +34,29 @@ With freemindlatex, we ask you to just focus on the logic.
 
 ## Installation
 
-The software is packaged into a zip file. It definitely supports Mac and linux. Haven't tested
-it on Windows, but it should work similarly.
+The software is packaged into a zip file. It definitely supports Mac and linux.
 
-	bash -c "$(curl -L -s https://raw.githubusercontent.com/xuehuichao/freemind-latex/bazel/install.sh)" /path/to/target/file.zip
+	bash -c "$(curl -L -s https://raw.githubusercontent.com/xuehuichao/freemind-latex/bazel/install.sh)" -- /path/to/freemindlatex.zip
 
-Also before running, make sure you install evince, or skim as the PDF viewer:
+### Prerequisites
 
-1. Evince, for linux and Windows: https://wiki.gnome.org/Apps/Evince
-2. Skim, for MacOS: http://skim-app.sourceforge.net/
+By default, the tool opens a PDF viewer, and compiles LaTeX locally. We will need to 
+install a PDF viewer as well as a LaTeX compiler.
 
+For LaTeX compiler, we need the full texlive (https://www.tug.org/texlive).
 
-### Running LaTeX locally
-By default, this tool connects to my server (sword.xuehuichao.com:8117) for LaTeX compilation.
-You may also run latex on your own computer.
-In this case, please make sure you have the full texlive (https://www.tug.org/texlive) installed.
 1. On MacOS: https://tug.org/mactex/
 2. On Ubuntu: `sudo apt-get install texlive-full`
 
-Then, instead of `freemindlatex`, please run `freemindlatex local` in your working directory.
+For PDF viewer: we need evince, or skim:
+
+1. Evince, for linux: https://wiki.gnome.org/Apps/Evince
+2. Skim, for MacOS: http://skim-app.sourceforge.net/
+
+
+### Running LaTeX remotely
+You may also use a remote server (e.g. sword.xuehuichao.com:8117) for LaTeX compilation.
+Then, instead of `freemindlatex`, please run `freemindlatex client` in your working directory.
 
 
 ## For development

@@ -23,41 +23,37 @@ import time
 
 import gflags
 import portpicker
-from freemindlatex import (
-  compilation_client_lib,
-  compilation_server_lib,
-  compilation_service_pb2,
-  init_dir_lib)
-
+from freemindlatex import (compilation_client_lib, compilation_server_lib,
+                           compilation_service_pb2, init_dir_lib)
 
 gflags.DEFINE_string(
-  "using_server",
-  "sword.xuehuichao.com:8117",
-  "The latex compilation server address, ip:port. When not specified, "
-  "will start the server at an unused port.")
+    "using_server",
+    "sword.xuehuichao.com:8117",
+    "The latex compilation server address, ip:port. When not specified, "
+    "will start the server at an unused port.")
 gflags.DEFINE_integer("seconds_between_rechecking", 1,
                       "Time between checking if files have changed.")
 gflags.DEFINE_integer(
-  "port",
-  None,
-  "Port to listen to, for the compilation request. "
-  "When not set, will pick a random port.")
+    "port",
+    None,
+    "Port to listen to, for the compilation request. "
+    "When not set, will pick a random port.")
 gflags.DEFINE_string(
-  "dir",
-  "",
-  "Directory to run freemindlatex."
+    "dir",
+    "",
+    "Directory to run freemindlatex."
 )
 gflags.DEFINE_string(
-  "mode",
-  "beamer",
-  "Compiling mode: beamer, HTML or report")
+    "mode",
+    "beamer",
+    "Compiling mode: beamer, HTML or report")
 
 
 FLAGS = gflags.FLAGS
 
 _COMPILATION_MODE_MAP = {
-  'beamer': compilation_service_pb2.LatexCompilationRequest.BEAMER,
-  'report': compilation_service_pb2.LatexCompilationRequest.REPORT,
+    'beamer': compilation_service_pb2.LatexCompilationRequest.BEAMER,
+    'report': compilation_service_pb2.LatexCompilationRequest.REPORT,
 }
 
 
@@ -108,21 +104,21 @@ def RunEditingEnvironment(directory, server_address):
   viewer_log_file = open(viewer_log_path, 'w')
 
   compiled_doc_path = (
-    compilation_client_lib.LatexCompilationClient.GetCompiledDocPath(directory))
+      compilation_client_lib.LatexCompilationClient.GetCompiledDocPath(directory))
   viewer_proc = _LaunchViewerProcess(
-    os.path.join(
-      directory,
-      compiled_doc_path
-    ),
-    viewer_log_file)
+      os.path.join(
+          directory,
+          compiled_doc_path
+      ),
+      viewer_log_file)
 
   freemind_sh_path = os.path.realpath(
-    os.path.join(
-      os.path.dirname(sys.modules[__name__].__file__),
-      "../../freemind/freemind.sh"))
+      os.path.join(
+          os.path.dirname(sys.modules[__name__].__file__),
+          "../../freemind/freemind.sh"))
   freemind_proc = subprocess.Popen(
-    ['sh', freemind_sh_path, mindmap_file_loc],
-    stdout=freemind_log_file, stderr=freemind_log_file, cwd=directory)
+      ['sh', freemind_sh_path, mindmap_file_loc],
+      stdout=freemind_log_file, stderr=freemind_log_file, cwd=directory)
 
   mtime_list = compilation_client_lib.GetMTimeListForDir(directory)
   try:
@@ -159,8 +155,8 @@ def RunEditingEnvironment(directory, server_address):
 def main():
   argv = FLAGS(sys.argv)
   logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s: %(threadName)s %(message)s')
+      level=logging.INFO,
+      format='%(levelname)s: %(threadName)s %(message)s')
 
   directory = FLAGS.dir or os.getcwd()
 
@@ -168,29 +164,29 @@ def main():
     port = FLAGS.port or portpicker.pick_unused_port()
     compilation_server_lib.RunServerAtPort(port)
 
-  elif argv[1:] == ['local']:
+  elif argv[1:] == ['client']:
+    if not FLAGS.using_server:
+      logging.fatal(
+          "Please specify the server address when running in the client mode "
+          "via --using_server")
+    RunEditingEnvironment(directory, server_address=FLAGS.using_server)
+
+  elif argv[1:] == []:
     port = FLAGS.port or portpicker.pick_unused_port()
     server_proc = subprocess.Popen(
-      ["python", argv[0], "--port", str(port), "server"])
+        ["python", argv[0], "--port", str(port), "server"])
     server_address = '127.0.0.1:{}'.format(port)
     compilation_client_lib.WaitTillHealthy(server_address)
     try:
       RunEditingEnvironment(
-        directory,
-        server_address=server_address)
+          directory,
+          server_address=server_address)
     finally:
       try:
         logging.info("Terminating latex compilation server.")
         server_proc.kill()
       except OSError:
         pass
-
-  elif argv[1:] == []:
-    if not FLAGS.using_server:
-      logging.fatal(
-        "Please specify the server address when running in the client mode "
-        "via --using_server")
-    RunEditingEnvironment(directory, server_address=FLAGS.using_server)
 
   else:
     print "Unable to recognize command %r" % argv

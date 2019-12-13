@@ -11,6 +11,7 @@ EOF
   exit 1
 fi
 target_loc="$1"
+branch="master"
 
 compile_dir=$(mktemp -d)
 finish() {
@@ -19,9 +20,9 @@ finish() {
 trap finish EXIT
 
 cd "$compile_dir"
-curl -s -L https://github.com/xuehuichao/freemind-latex/archive/bazel.zip -o freemindlatex.zip
+curl -s -L "https://github.com/xuehuichao/freemind-latex/archive/${branch}.zip" -o freemindlatex.zip
 unzip -q freemindlatex.zip
-cd freemind-latex-bazel
+cd "freemind-latex-${branch}"
 ./bazel build -c opt --build_python_zip freemindlatex:freemindlatex_app_main
 cp bazel-out/k8-py2-opt/bin/freemindlatex/freemindlatex_app_main.zip -f "$target_loc"
 cat <<EOF

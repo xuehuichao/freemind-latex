@@ -34,9 +34,9 @@ With freemindlatex, we ask you to just focus on the logic.
 
 ## Installation
 
-The software is packaged into a zip file. It definitely supports Mac and linux.
+The software is packaged into a zip file. It supports Mac and linux.
 
-	bash -c "$(curl -L -s https://raw.githubusercontent.com/xuehuichao/freemind-latex/bazel/install.sh)" -- /path/to/freemindlatex.zip
+	bash -c "$(curl -L -s https://raw.githubusercontent.com/xuehuichao/freemind-latex/master/install.sh)" -- /path/to/freemindlatex.zip
 
 ### Prerequisites
 

@@ -54,6 +54,8 @@ py_library(
     deps = [
         requirement("python-gflags"),
         requirement("bibtexparser"),
+        requirement("pyparsing"),
+        requirement("future"),
     ],
 )
 
